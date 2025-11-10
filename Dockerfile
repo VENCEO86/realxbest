@@ -1,40 +1,25 @@
-# PHP + Apache 기반 이미지 사용
+# PHP + Apache
 FROM php:8.2-apache
 
-# PHP 확장 설치 (MySQL, PDO 등)
-RUN docker-php-ext-install mysqli pdo pdo_mysql && docker-php-ext-enable mysqli
+# PHP 확장
+RUN docker-php-ext-install mysqli pdo pdo_mysql && docker-php-ext-enable mysqli \
+ && apt-get update && apt-get install -y \
+    libfreetype6-dev libjpeg62-turbo-dev libpng-dev libwebp-dev \
+ && docker-php-ext-configure gd --with-freetype --with-jpeg --with-webp \
+ && docker-php-ext-install gd gettext exif
 
-# GD 라이브러리 설치 (이미지 처리용)
-RUN apt-get update && apt-get install -y \
-    libfreetype6-dev \
-    libjpeg62-turbo-dev \
-    libpng-dev \
-    libwebp-dev \
-    && docker-php-ext-configure gd --with-freetype --with-jpeg --with-webp \
-    && docker-php-ext-install gd
-
-# 기타 필요한 확장 설치
-RUN docker-php-ext-install gettext exif
-
-# Apache rewrite 모듈 활성화
+# Apache 설정
 RUN a2enmod rewrite
-
-# 작업 디렉토리 설정
-WORKDIR /var/www/html
-
-# 프로젝트 파일 복사
-COPY . /var/www/html/
-
-# ✅ Secret Files 복사 (Render 시크릿을 웹루트로 이동)
-RUN mkdir -p /var/www/html/data \
- && if [ -f /etc/secrets/CONFIG_PHP ]; then cp /etc/secrets/CONFIG_PHP /var/www/html/config.php; fi \
- && if [ -f /etc/secrets/DBCONFIG_PHP ]; then cp /etc/secrets/DBCONFIG_PHP /var/www/html/data/dbconfig.php; fi
-
-# 디렉토리 권한 설정
-RUN chown -R www-data:www-data /var/www/html
-
-# index.php 우선 적용 설정
 RUN echo "DirectoryIndex index.php index.html" >> /etc/apache2/apache2.conf
 
-# Apache 실행 명령
-CMD ["apache2-foreground"]
+# 코드 복사 & 권한
+WORKDIR /var/www/html
+COPY . /var/www/html/
+RUN chown -R www-data:www-data /var/www/html
+
+# ── 핵심: 런타임에 Secret Files 복사하는 스타트 스크립트 ──
+COPY docker-start.sh /usr/local/bin/docker-start.sh
+RUN chmod +x /usr/local/bin/docker-start.sh
+
+# 컨테이너 시작시 실행
+CMD ["/usr/local/bin/docker-start.sh"]
