@@ -1,0 +1,129 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<title>관리자 로그인 테스트</title>
+<style>
+body {
+    font-family: Arial, sans-serif;
+    max-width: 600px;
+    margin: 50px auto;
+    padding: 20px;
+    background: #f5f5f5;
+}
+.container {
+    background: white;
+    padding: 30px;
+    border-radius: 10px;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+}
+h1 {
+    color: #333;
+    margin-bottom: 20px;
+}
+.info {
+    background: #e3f2fd;
+    padding: 15px;
+    border-left: 4px solid #2196F3;
+    margin: 20px 0;
+}
+.test-section {
+    margin: 20px 0;
+    padding: 15px;
+    background: #f9f9f9;
+    border-radius: 5px;
+}
+.btn {
+    display: inline-block;
+    padding: 10px 20px;
+    margin: 5px;
+    background: #2196F3;
+    color: white;
+    text-decoration: none;
+    border-radius: 5px;
+    font-weight: bold;
+}
+.btn:hover {
+    background: #1976D2;
+}
+.btn-success {
+    background: #4CAF50;
+}
+.btn-success:hover {
+    background: #45a049;
+}
+.credentials {
+    background: #fff3cd;
+    padding: 15px;
+    border-left: 4px solid #ffc107;
+    margin: 20px 0;
+}
+.credentials strong {
+    display: block;
+    margin: 5px 0;
+}
+</style>
+</head>
+<body>
+<div class="container">
+    <h1>🔐 관리자 로그인 테스트</h1>
+    
+    <div class="info">
+        <strong>현재 상태:</strong>
+        <ul>
+            <li>✅ Docker 컨테이너: 실행 중</li>
+            <li>✅ 웹 서버 (Apache): 정상</li>
+            <li>✅ 데이터베이스 (MySQL): 정상</li>
+            <li>✅ 세션: 정상 작동</li>
+        </ul>
+    </div>
+    
+    <div class="credentials">
+        <h3>📋 로그인 정보</h3>
+        <strong>아이디: admin</strong>
+        <strong>비밀번호: admin1234</strong>
+    </div>
+    
+    <div class="test-section">
+        <h3>1️⃣ 메인 페이지 테스트</h3>
+        <a href="http://localhost:8080/" class="btn" target="_blank">메인 페이지 열기</a>
+        <p>메인 페이지가 정상적으로 표시되는지 확인하세요.</p>
+    </div>
+    
+    <div class="test-section">
+        <h3>2️⃣ 관리자 페이지 접속</h3>
+        <a href="http://localhost:8080/adm" class="btn btn-success" target="_blank">관리자 페이지 열기</a>
+        <p>로그인 페이지로 리다이렉트됩니다.</p>
+    </div>
+    
+    <div class="test-section">
+        <h3>3️⃣ 직접 로그인</h3>
+        <form method="post" action="http://localhost:8080/bbs/login_check.php" target="_blank">
+            <input type="text" name="mb_id" value="admin" style="width: 200px; padding: 8px; margin: 5px 0;" readonly><br>
+            <input type="password" name="mb_password" value="admin1234" style="width: 200px; padding: 8px; margin: 5px 0;" readonly><br>
+            <input type="hidden" name="url" value="http://localhost:8080/adm">
+            <button type="submit" class="btn btn-success" style="border: none; cursor: pointer;">로그인 하기</button>
+        </form>
+        <p>위 버튼을 클릭하면 admin/admin1234로 자동 로그인됩니다.</p>
+    </div>
+    
+    <div class="test-section">
+        <h3>4️⃣ 데이터베이스 관리 (phpMyAdmin)</h3>
+        <a href="http://localhost:8081" class="btn" target="_blank">phpMyAdmin 열기</a>
+        <p>사용자명: gnuboard / 비밀번호: gnuboard1234</p>
+    </div>
+    
+    <div class="info" style="margin-top: 30px;">
+        <strong>문제 해결:</strong>
+        <ul>
+            <li>로그인이 안 되면: 브라우저 쿠키를 삭제하고 다시 시도</li>
+            <li>페이지가 안 열리면: Docker 컨테이너 재시작 (재시작.bat)</li>
+            <li>에러가 발생하면: 상태확인.bat으로 로그 확인</li>
+        </ul>
+    </div>
+</div>
+</body>
+</html>
+
+
+

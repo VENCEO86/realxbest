@@ -1,0 +1,54 @@
+@charset "utf-8";
+/* 새글 스킨 (lat_v1est) */
+
+/*
+:root { 
+	--icon_new : #03a9f4;
+	--text_color : #666666;
+}
+
+.colum { 
+	columns: 2;
+	-webkit-columns: 2;
+	-moz-columns: 2;
+}
+*/
+.latest_v10 {line-height: 18px;padding: 3px 0;padding-right: 50px;position: relative;}
+.latest_v10 .latest_v10_title {display:block;padding:0 20px;line-height:45px;font-size:1.083em;border-bottom:1px solid #e2e2e2;color:#253dbe;background:#fcfcfc}
+.latest_v10 .latest_v10_title a{color:#253dbe;display:inline-block;position:relative}
+.latest_v10 .latest_v10_title a:after{position:absolute;bottom:-1px;left:0;width:100%;height:2px;background:#253dbe;content:''}
+.latest_v10 {padding:15px 20px}
+.latest_v10 {position:relative;line-height:18px;padding:3px 0;padding-right:50px;position:relative}
+.latest_v10 a{padding-left:0px;}
+.latest_v10 :before{position: absolute;top: 12px;left: 0px;height: 4px;content: '';border-radius: 50%;}
+.latest_v10 a:hover{text-decoration:underline;}
+.latest_v10 .fa-heart{color:#ff0000;}
+.latest_v10 .fa-lock{display: inline-block;line-height: 0px;width: 16px;font-size: 0.833em;color: #4f818c;background: #cbe3e8;text-align: center;border-radius: 2px;font-size: 12px;}
+.latest_v10 .new_icon{display:inline-block;width: 16px;line-height:16px;font-size:0.833em;color:#ffff00;background: #03a9f4;text-align:center;border-radius: 2px;}
+.latest_v10 .hot_icon{display:inline-block;width: 16px;line-height:16px ;font-size:0.833em;color:#fff;background:#e52955;text-align:center;border-radius: 2px;}
+.latest_v10 .fa-caret-right{color:#bbb}
+.latest_v10 .lt_date{position:absolute;top:3px;right:0;color:#888}
+.latest_v10  .empty_li{line-height:145px ;color:#666;text-align:center;padding:0;}
+.latest_v10  .empty_li:before{background:none;padding:0}
+.latest_v10 .lt_cmt{
+	display: inline-block;
+    background: #34314c;
+    color: #fff;
+    font-size: 11px;
+    height: 16px;
+    line-height: 16px;
+    padding: 1px 3px;
+    /* border-radius: 3px; */
+    -webkit-box-shadow: inset 0 2px 5px rgba(255,255,255,0.4);
+    -moz-box-shadow: inset 0 2px 5px rgba(255,255,255,0.4);
+    box-shadow: inset 0 2px 5px rgba(255,255,255,0.4);
+}
+.latest_v10 .lt_more {position:absolute;top:11px;right:10px;display:block;width:25px;line-height:25px;color:#aaa;border-radius:3px;text-align:center;}
+.latest_v10 .lt_more:hover{color:#777}
+.profile_img{ position: absolute;}
+.la_cate { color: #d64072;font-weight: bold; }
+.nav-tabs .nav-link {color: #999999;border-bottom: 1px solid #cccccc;/*background-color: #f9f9f9;*/}
+.nav-tabs .nav-item.show .nav-link, .nav-tabs .nav-link.active {color: #000000;font-weight:bold;background-color: #fff;border-color: #dee2e6 #dee2e6 #fff;}
+.nav-tabs .nav-link:focus, .nav-tabs .nav-link:hover {border-color: #ffffff #ffffff #ffffff;}
+.sub_text_profile_img{ float:right; }
+.sub_text_profile_img img {border: 1px solid #bbb;border-radius: 50%;width: 20px;height: 20px;}
