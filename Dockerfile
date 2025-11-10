@@ -25,12 +25,13 @@ WORKDIR /var/www/html
 # 프로젝트 파일 복사
 COPY . /var/www/html/
 
-# Secret Files 복사 (Render 비밀파일 → 실제 위치)
+# ✅ Secret Files 복사 (Render 시크릿을 웹루트로 이동)
 RUN mkdir -p /var/www/html/data \
  && if [ -f /etc/secrets/CONFIG_PHP ]; then cp /etc/secrets/CONFIG_PHP /var/www/html/config.php; fi \
- && if [ -f /etc/secrets/DBCONFIG_PHP ]; then cp /etc/secrets/DBCONFIG_PHP /var/www/html/data/dbconfig.php; fi \
- && chown -R www-data:www-data /var/www/html \
- && chmod 640 /var/www/html/config.php /var/www/html/data/dbconfig.php || true
+ && if [ -f /etc/secrets/DBCONFIG_PHP ]; then cp /etc/secrets/DBCONFIG_PHP /var/www/html/data/dbconfig.php; fi
+
+# 디렉토리 권한 설정
+RUN chown -R www-data:www-data /var/www/html
 
 # index.php 우선 적용 설정
 RUN echo "DirectoryIndex index.php index.html" >> /etc/apache2/apache2.conf
