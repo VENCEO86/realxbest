@@ -5,10 +5,10 @@ cookies
 perms.sh
 
 # 데이터(게시글/회원 등 실제 내용)
-data/
+# data/
 
 # 설치/압축
-install/
+# install/
 *.zip
 
 # 로컬에서만 쓰는 것(있을 때만)
