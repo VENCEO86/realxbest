@@ -1,10 +1,11 @@
 <?php
-// ----------------------------
+define('G5_PATH', __DIR__);
+define('G5_DATA_PATH', G5_PATH . '/data');
+
+// -------------------------------------------------
 // 기본 환경 상수 정의
-// ----------------------------
 define('G5_VERSION', '5.5.0');
 define('G5_ESCAPE_FUNCTION', 'htmlspecialchars');
-define('G5_PATH', __DIR__);
 
 // ----------------------------
 // DB 환경 변수 로드
