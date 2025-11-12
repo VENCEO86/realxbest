@@ -52,4 +52,31 @@ $needDirs = [
 foreach ($needDirs as $d) {
     if (!is_dir($d)) @mkdir($d, 0777, true);
     @chmod($d, 0777);
+// (기존 코드)
+
+// -------------------------------
+// Render 환경에서도 작동하는 자동 폴더 생성 코드
+// -------------------------------
+$dirs = [
+    G5_DATA_PATH,
+    G5_DATA_PATH . '/cache',
+    G5_DATA_PATH . '/file',
+    G5_DATA_PATH . '/session',
+    G5_DATA_PATH . '/tmp'
+];
+
+foreach ($dirs as $d) {
+    if (!is_dir($d)) {
+        @mkdir($d, 0777, true);
+    }
+    @chmod($d, 0777);
+    @file_put_contents($d . '/perm_test.txt', 'OK');
+}
+
+// -------------------------------
+// 상태 로그 남기기 (Render에서 확인용)
+// -------------------------------
+$logfile = G5_DATA_PATH . '/create_log.txt';
+@file_put_contents($logfile, date('Y-m-d H:i:s') . " - folder setup complete\n", FILE_APPEND);
+
 }
