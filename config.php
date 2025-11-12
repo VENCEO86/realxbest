@@ -27,6 +27,16 @@ define('G5_MYSQL_PORT', $mysql_port);
 // 그누보드가 읽는 DB 설정파일 경로(루트)
 define('G5_DBCONFIG_FILE', G5_PATH . '/dbconfig.php');
 
+// (호환용) 옛날 코드에서 G5_DATA_DIR을 썼다면 대비
+if (!defined('G5_DATA_DIR')) define('G5_DATA_DIR', G5_DATA_PATH);
+
+// ✅ 새로 추가할 부분 (인터넷 주소 자동 설정)
+if (!defined('G5_URL')) {
+    $scheme = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off') ? 'https' : 'http';
+    $host   = $_SERVER['HTTP_HOST'] ?? 'localhost';
+    define('G5_URL', $scheme.'://'.$host);
+}
+
 // 에러 보기
 ini_set('display_errors', 1);
 error_reporting(E_ALL);
