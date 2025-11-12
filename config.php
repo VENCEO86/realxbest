@@ -23,6 +23,9 @@ define('G5_MYSQL_PASSWORD', $mysql_password);
 define('G5_MYSQL_DB', $mysql_db);
 define('G5_MYSQL_PORT', (int)$mysql_port);
 
+// ✅ 여기 추가 👇
+define('G5_DBCONFIG_FILE', G5_PATH . '/dbconfig.php');
+
 // -------------------------------------------------
 // 오류 표시 설정 (Render용)
 ini_set('display_errors', 1);
