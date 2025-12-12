@@ -63,17 +63,43 @@ export async function GET(
         // 기본 카테고리
         const defaultCategory = { id: "default", name: "기타", nameEn: "Other" };
         
-        // 성장 데이터 생성 (최근 30일, 샘플 데이터)
-        const growthData = [];
-        const now = new Date();
-        for (let i = 29; i >= 0; i--) {
-          const date = new Date(now);
-          date.setDate(date.getDate() - i);
-          growthData.push({
-            date,
-            subscriberCount: youtubeData.subscriberCount - (i * 10000), // 샘플 데이터
-            viewCount: youtubeData.totalViewCount - (i * 1000000), // 샘플 데이터
+        // 실제 성장 데이터 가져오기 (DB에서)
+        let growthData = [];
+        try {
+          const dbChannel = await prisma.youTubeChannel.findUnique({
+            where: { channelId: params.id },
+            include: {
+              growthData: {
+                orderBy: { date: 'asc' },
+                take: 30, // 최근 30일
+              },
+            },
           });
+          
+          if (dbChannel && dbChannel.growthData.length > 0) {
+            // DB에서 실제 데이터 사용
+            growthData = dbChannel.growthData.map(g => ({
+              date: g.date,
+              subscriberCount: Number(g.subscriberCount),
+              viewCount: Number(g.viewCount),
+            }));
+          } else {
+            // DB에 데이터가 없으면 현재 값 기준으로 초기 데이터 생성
+            const now = new Date();
+            growthData = [{
+              date: now,
+              subscriberCount: youtubeData.subscriberCount,
+              viewCount: youtubeData.totalViewCount,
+            }];
+          }
+        } catch (error) {
+          console.error("Error fetching growth data:", error);
+          // 오류 시 현재 값만 표시
+          growthData = [{
+            date: new Date(),
+            subscriberCount: youtubeData.subscriberCount,
+            viewCount: youtubeData.totalViewCount,
+          }];
         }
         
         // 평균 참여율 계산 (동영상이 있는 경우)
