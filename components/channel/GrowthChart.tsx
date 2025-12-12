@@ -201,7 +201,6 @@ export function GrowthChart({ growthData }: { growthData: GrowthData[] }) {
             width={75}
             tickLine={{ stroke: '#6366f1', opacity: 0.4 }}
             axisLine={{ stroke: '#6366f1', opacity: 0.5, strokeWidth: 1.5 }}
-            label={{ value: '구독자', angle: -90, position: 'insideLeft', style: { textAnchor: 'middle', fill: '#6366f1', fontSize: 11, fontWeight: 600 } }}
           />
           <YAxis 
             yAxisId="right" 
@@ -212,7 +211,6 @@ export function GrowthChart({ growthData }: { growthData: GrowthData[] }) {
             width={75}
             tickLine={{ stroke: '#10b981', opacity: 0.4 }}
             axisLine={{ stroke: '#10b981', opacity: 0.5, strokeWidth: 1.5 }}
-            label={{ value: '조회수', angle: 90, position: 'insideRight', style: { textAnchor: 'middle', fill: '#10b981', fontSize: 11, fontWeight: 600 } }}
           />
           <Tooltip content={<CustomTooltip />} />
           <Legend 
@@ -224,7 +222,6 @@ export function GrowthChart({ growthData }: { growthData: GrowthData[] }) {
                 {value}
               </span>
             )}
-            iconStyle={{ strokeWidth: 3 }}
           />
           <Line
             yAxisId="left"
@@ -239,8 +236,7 @@ export function GrowthChart({ growthData }: { growthData: GrowthData[] }) {
               fill: '#6366f1', 
               strokeWidth: 3,
               stroke: '#ffffff',
-              className: 'drop-shadow-lg',
-              style: { filter: 'drop-shadow(0 4px 6px rgba(99, 102, 241, 0.3))' }
+              className: 'drop-shadow-lg'
             }}
             animationDuration={500}
             strokeLinecap="round"
@@ -259,8 +255,7 @@ export function GrowthChart({ growthData }: { growthData: GrowthData[] }) {
               fill: '#10b981', 
               strokeWidth: 3,
               stroke: '#ffffff',
-              className: 'drop-shadow-lg',
-              style: { filter: 'drop-shadow(0 4px 6px rgba(16, 185, 129, 0.3))' }
+              className: 'drop-shadow-lg'
             }}
             animationDuration={500}
             strokeLinecap="round"
