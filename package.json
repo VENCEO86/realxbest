@@ -24,9 +24,7 @@
     "check-db": "tsx scripts/check-db-connection.ts",
     "db:setup": "tsx scripts/setup-db-auto.ts",
     "collect:daily": "tsx scripts/daily-auto-collect.ts",
-    "setup-db": "tsx scripts/setup-db-auto.ts",
-    "collect-daily": "tsx scripts/daily-channel-collector.ts",
-    "collect-auto": "npm run setup-db && npm run collect-daily"
+    "collect-auto": "npm run db:setup && npm run collect:daily"
   },
   "dependencies": {
     "@dnd-kit/core": "^6.1.0",
