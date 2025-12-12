@@ -1,0 +1,99 @@
+"use client";
+
+import { useEffect, useState } from "react";
+import Link from "next/link";
+import { useRouter } from "next/navigation";
+
+export function AdminAuthButton() {
+  const [isAuthenticated, setIsAuthenticated] = useState<boolean | null>(null);
+  const router = useRouter();
+
+  useEffect(() => {
+    // #region agent log
+    fetch('http://127.0.0.1:7243/ingest/6ba67444-070e-4761-a65f-f3790b0cf0ed',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'components/layout/AdminAuthButton.tsx:11',message:'인증 상태 확인 시작',data:{},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'E'})}).catch(()=>{});
+    // #endregion
+    
+    // 인증 상태 확인
+    fetch("/api/admin/check-auth", {
+      credentials: "include", // 쿠키 포함
+    })
+      .then((res) => {
+        // #region agent log
+        fetch('http://127.0.0.1:7243/ingest/6ba67444-070e-4761-a65f-f3790b0cf0ed',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'components/layout/AdminAuthButton.tsx:17',message:'인증 확인 API 응답',data:{status:res.status,ok:res.ok},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'E'})}).catch(()=>{});
+        // #endregion
+        
+        return res.json();
+      })
+      .then((data) => {
+        // #region agent log
+        fetch('http://127.0.0.1:7243/ingest/6ba67444-070e-4761-a65f-f3790b0cf0ed',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'components/layout/AdminAuthButton.tsx:23',message:'인증 상태 설정',data:{authenticated:data.authenticated},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'E'})}).catch(()=>{});
+        // #endregion
+        
+        setIsAuthenticated(data.authenticated);
+      })
+      .catch((err) => {
+        // #region agent log
+        fetch('http://127.0.0.1:7243/ingest/6ba67444-070e-4761-a65f-f3790b0cf0ed',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'components/layout/AdminAuthButton.tsx:29',message:'인증 확인 오류',data:{errorMessage:err instanceof Error?err.message:'unknown'},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'E'})}).catch(()=>{});
+        // #endregion
+        
+        setIsAuthenticated(false);
+      });
+  }, []);
+
+  const handleLogout = async () => {
+    try {
+      await fetch("/api/admin/logout", { 
+        method: "POST",
+        credentials: "include"
+      });
+      setIsAuthenticated(false);
+      await router.push("/");
+      router.refresh();
+    } catch (error) {
+      console.error("Logout error:", error);
+    }
+  };
+
+  if (isAuthenticated === null) {
+    // 로딩 중
+    return null;
+  }
+
+  if (isAuthenticated) {
+    return (
+      <div className="flex items-center gap-2 md:gap-4 overflow-x-auto scrollbar-hide">
+        <Link
+          href="/admin/collaborations"
+          prefetch={true}
+          className="px-3 py-2 md:px-4 md:py-2 bg-purple-600 text-white rounded hover:bg-purple-700 cursor-pointer whitespace-nowrap text-sm md:text-base"
+        >
+          협업문의
+        </Link>
+        <Link
+          href="/admin/ads"
+          prefetch={true}
+          className="px-3 py-2 md:px-4 md:py-2 bg-blue-600 text-white rounded hover:bg-blue-700 cursor-pointer whitespace-nowrap text-sm md:text-base"
+        >
+          광고관리
+        </Link>
+        <button
+          onClick={handleLogout}
+          className="px-3 py-2 md:px-4 md:py-2 bg-gray-600 text-white rounded hover:bg-gray-700 whitespace-nowrap text-sm md:text-base"
+        >
+          로그아웃
+        </button>
+      </div>
+    );
+  }
+
+  return (
+    <Link
+      href="/admin/login"
+      prefetch={true}
+      className="px-3 py-2 md:px-4 md:py-2 bg-gray-600 text-white rounded hover:bg-gray-700 cursor-pointer whitespace-nowrap text-sm md:text-base"
+    >
+      로그인
+    </Link>
+  );
+}
+

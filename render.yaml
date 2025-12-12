@@ -1,0 +1,22 @@
+# Render 배포 설정 파일
+services:
+  - type: web
+    name: realxbest
+    env: docker
+    dockerfilePath: ./Dockerfile
+    dockerContext: .
+    plan: free
+    buildCommand: ""
+    startCommand: ""
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: NEXT_TELEMETRY_DISABLED
+        value: "1"
+      # 아래 환경 변수들은 Render 대시보드에서 설정해야 합니다:
+      # - YOUTUBE_API_KEYS
+      # - YOUTUBE_API_KEY
+      # - DATABASE_URL (PostgreSQL 사용 시)
+      # - NEXT_PUBLIC_BASE_URL
+      # - NEXT_PUBLIC_APP_URL
+
