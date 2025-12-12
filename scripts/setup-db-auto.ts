@@ -1,6 +1,6 @@
 /**
  * 데이터베이스 자동 설정 스크립트
- * Prisma 마이그레이션 및 초기 데이터 설정
+ * 카테고리 초기화 및 기본 데이터 설정
  */
 
 import { PrismaClient } from "@prisma/client";
@@ -23,12 +23,11 @@ async function main() {
   console.log("🚀 데이터베이스 자동 설정 시작...\n");
   
   try {
-    // 데이터베이스 연결 테스트
     await prisma.$connect();
     console.log("✅ 데이터베이스 연결 성공\n");
     
-    // 카테고리 생성
-    console.log("📋 카테고리 설정 중...\n");
+    // 카테고리 초기화
+    console.log("📋 카테고리 설정 중...");
     for (const category of CATEGORIES) {
       const existing = await prisma.category.findUnique({
         where: { name: category.name },
@@ -47,25 +46,18 @@ async function main() {
       }
     }
     
-    console.log("\n✅ 데이터베이스 설정 완료!\n");
-    
-    // 통계 출력
+    // 통계 확인
     const channelCount = await prisma.youTubeChannel.count();
     const categoryCount = await prisma.category.count();
     
-    console.log("📊 현재 데이터베이스 상태:");
+    console.log(`\n📊 현재 상태:`);
     console.log(`  - 카테고리: ${categoryCount}개`);
-    console.log(`  - 채널: ${channelCount}개\n`);
+    console.log(`  - 채널: ${channelCount}개`);
+    
+    console.log(`\n✅ 데이터베이스 설정 완료!\n`);
     
   } catch (error: any) {
     console.error("❌ 오류 발생:", error);
-    
-    if (error.message?.includes("P1001") || error.message?.includes("connect")) {
-      console.error("\n💡 데이터베이스 연결 실패:");
-      console.error("   DATABASE_URL 환경 변수를 확인하세요.");
-      console.error("   Render PostgreSQL 서비스를 생성했는지 확인하세요.\n");
-    }
-    
     process.exit(1);
   } finally {
     await prisma.$disconnect();
@@ -73,4 +65,3 @@ async function main() {
 }
 
 main().catch(console.error);
-

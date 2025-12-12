@@ -2,7 +2,7 @@ name: Daily Channel Collection
 
 on:
   schedule:
-    # 매일 한국시간 오전 3시 (UTC 18시) 실행
+    # 매일 한국시간 오전 3시 (UTC 18:00)
     - cron: '0 18 * * *'
   workflow_dispatch: # 수동 실행 가능
 
@@ -21,27 +21,15 @@ jobs:
           cache: 'npm'
       
       - name: Install dependencies
-        run: npm ci --legacy-peer-deps
+        run: npm ci
       
-      - name: Setup Prisma
-        run: npx prisma generate
-      
-      - name: Run database setup
+      - name: Setup database
         env:
           DATABASE_URL: ${{ secrets.DATABASE_URL }}
-        run: npm run setup-db
+        run: npm run db:setup
       
       - name: Run daily collection
         env:
           DATABASE_URL: ${{ secrets.DATABASE_URL }}
           YOUTUBE_API_KEYS: ${{ secrets.YOUTUBE_API_KEYS }}
-        run: npm run collect-daily
-      
-      - name: Commit and push if changes
-        run: |
-          git config --local user.email "action@github.com"
-          git config --local user.name "GitHub Action"
-          git add -A
-          git diff --staged --quiet || git commit -m "chore: Auto update channel data [skip ci]"
-          git push || echo "No changes to commit"
-
+        run: tsx scripts/daily-auto-collect.ts
