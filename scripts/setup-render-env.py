@@ -30,7 +30,7 @@ def setup_env_vars():
     
     url = f"{BASE_URL}/services/{SERVICE_ID}/env-vars"
     
-    print("\n🚀 Render 환경 변수 자동 설정 시작...\n")
+    print("\n[START] Render environment variables auto-setup...\n")
     
     success_count = 0
     fail_count = 0
@@ -42,42 +42,42 @@ def setup_env_vars():
                 "value": value
             }
             
-            print(f"  시도: {key}...", end=" ")
+            print(f"  Trying: {key}...", end=" ")
             
             response = requests.post(url, json=payload, headers=headers)
             
             if response.status_code == 201:
-                print("✅ 성공!")
+                print("[SUCCESS]")
                 success_count += 1
             elif response.status_code == 409:
-                print("ℹ️  이미 존재함 (업데이트 시도)...", end=" ")
+                print("[EXISTS] Updating...", end=" ")
                 # 업데이트 시도
                 update_url = f"{url}/{key}"
                 update_response = requests.put(update_url, json={"value": value}, headers=headers)
                 if update_response.status_code == 200:
-                    print("✅ 업데이트 완료!")
+                    print("[UPDATED]")
                     success_count += 1
                 else:
-                    print(f"⚠️  업데이트 실패 (HTTP {update_response.status_code})")
+                    print(f"[FAIL] HTTP {update_response.status_code}")
                     fail_count += 1
             else:
-                print(f"❌ 실패 (HTTP {response.status_code})")
+                print(f"[FAIL] HTTP {response.status_code}")
                 if response.text:
-                    print(f"     오류: {response.text[:100]}")
+                    print(f"     Error: {response.text[:100]}")
                 fail_count += 1
                 
         except Exception as e:
-            print(f"❌ 오류: {str(e)}")
+            print(f"[ERROR] {str(e)}")
             fail_count += 1
     
-    print(f"\n📊 결과: {success_count}개 성공, {fail_count}개 실패\n")
+    print(f"\n[RESULT] {success_count} success, {fail_count} failed\n")
     
     if fail_count > 0:
-        print("⚠️  일부 변수 설정에 실패했습니다.")
-        print("   Render 대시보드에서 수동으로 설정해주세요.\n")
+        print("[WARNING] Some variables failed to set.")
+        print("   Please set them manually in Render dashboard.\n")
         return False
     else:
-        print("✅ 모든 환경 변수 설정 완료!\n")
+        print("[SUCCESS] All environment variables set!\n")
         return True
 
 if __name__ == "__main__":
@@ -85,9 +85,9 @@ if __name__ == "__main__":
         success = setup_env_vars()
         sys.exit(0 if success else 1)
     except KeyboardInterrupt:
-        print("\n\n⚠️  사용자에 의해 중단되었습니다.\n")
+        print("\n\n[INTERRUPTED] Stopped by user.\n")
         sys.exit(1)
     except Exception as e:
-        print(f"\n❌ 예상치 못한 오류: {str(e)}\n")
+        print(f"\n[ERROR] Unexpected error: {str(e)}\n")
         sys.exit(1)
 
