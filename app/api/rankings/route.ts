@@ -39,7 +39,7 @@ export const dynamic = 'force-dynamic';
 
 // 간단한 메모리 캐시
 const rankingsCache = new Map<string, { data: any; timestamp: number }>();
-const RANKINGS_CACHE_TTL = 2 * 60 * 1000; // 2분
+const RANKINGS_CACHE_TTL = 5 * 60 * 1000; // 5분 (캐시 시간 증가로 성능 향상)
 
 export async function GET(request: NextRequest) {
   // 캐시 키 생성
@@ -61,17 +61,9 @@ export async function GET(request: NextRequest) {
     const period = searchParams.get("period") || "weekly";
     const page = parseInt(searchParams.get("page") || "1");
     
-    // 동적 limit 설정: 전체 지역일 때는 더 많이, 카테고리별 최소 100개, 국가별 200개
-    let defaultLimit = 100;
-    if (country && country !== "all") {
-      defaultLimit = 200; // 국가별 필터링 시 200개
-    } else if (category && category !== "all") {
-      defaultLimit = 100; // 카테고리별 필터링 시 100개
-    } else if (country === "all" && (!category || category === "all")) {
-      defaultLimit = 500; // 전체 지역 + 전체 카테고리일 때는 500개 (모든 데이터 표시)
-    }
-    
-    const limit = parseInt(searchParams.get("limit") || String(defaultLimit));
+    // limit 최적화: 성능을 위해 최대 100개로 제한
+    const requestedLimit = parseInt(searchParams.get("limit") || "50");
+    const limit = Math.min(requestedLimit, 100); // 최대 100개로 제한
     const skip = (page - 1) * limit;
 
     // 실제 YouTube API 데이터 가져오기 (데이터베이스가 없을 때)
@@ -2818,11 +2810,30 @@ export async function GET(request: NextRequest) {
       });
     }
 
+    // 쿼리 최적화: 필요한 필드만 선택
     const [channels, total] = await Promise.all([
       prisma.youTubeChannel.findMany({
         where,
-        include: {
-          category: true,
+        select: {
+          id: true,
+          channelId: true,
+          channelName: true,
+          handle: true,
+          profileImageUrl: true,
+          subscriberCount: true,
+          totalViewCount: true,
+          weeklySubscriberChangeRate: true,
+          weeklyViewCount: true,
+          weeklyViewCountChangeRate: true,
+          averageEngagementRate: true,
+          currentRank: true,
+          rankChange: true,
+          lastUpdated: true,
+          category: {
+            select: {
+              name: true,
+            },
+          },
         },
         orderBy,
         skip,

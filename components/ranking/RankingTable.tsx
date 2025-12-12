@@ -31,12 +31,19 @@ async function fetchRankings(params: URLSearchParams): Promise<{
 }> {
   try {
     const url = `/api/rankings?${params.toString()}`;
+    
+    // 타임아웃 설정 (10초)
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 10000);
+    
     const response = await fetch(url, {
+      signal: controller.signal,
       headers: {
         'Content-Type': 'application/json',
       },
-      cache: 'no-store', // 클라이언트 컴포넌트에서는 React Query가 캐싱 처리
     });
+    
+    clearTimeout(timeoutId);
 
     if (!response.ok) {
       throw new Error(`API 오류: ${response.status}`);
@@ -49,7 +56,10 @@ async function fetchRankings(params: URLSearchParams): Promise<{
     }
 
     return data;
-  } catch (error) {
+  } catch (error: any) {
+    if (error.name === 'AbortError') {
+      throw new Error('요청 시간 초과');
+    }
     console.error('Rankings fetch error:', error);
     throw error;
   }
@@ -62,17 +72,11 @@ export function RankingTable() {
   const category = searchParams.get("category");
   const country = searchParams.get("country");
   
-  // 동적 limit 설정: 전체 지역일 때는 더 많이, 카테고리별 최소 100개, 국가별 200개
-  let defaultLimit = 100;
-  if (country && country !== "all") {
-    defaultLimit = 200; // 국가별 필터링 시 200개
-  } else if (category && category !== "all") {
-    defaultLimit = 100; // 카테고리별 필터링 시 100개
-  } else if (country === "all" && (!category || category === "all")) {
-    defaultLimit = 500; // 전체 지역 + 전체 카테고리일 때는 500개 (모든 데이터 표시)
-  }
-  
-  const limit = parseInt(searchParams.get("limit") || String(defaultLimit));
+  // limit 최적화: 성능을 위해 최대 100개로 제한
+  const limit = Math.min(
+    parseInt(searchParams.get("limit") || "50"),
+    100 // 최대 100개로 제한
+  );
 
   const { data, isLoading, error, isError } = useQuery({
     queryKey: ["rankings", searchParams.toString()],
