@@ -1,158 +1,85 @@
-# ✅ 배포 완료 체크리스트
+# 🚀 Render 배포 체크리스트
 
-## 🎉 환경 변수 설정 완료!
+## ✅ 완료된 작업
 
-모든 환경 변수가 설정되었습니다. 이제 배포가 정상적으로 진행되는지 확인하세요!
+1. ✅ Dockerfile 생성 (Next.js standalone 빌드)
+2. ✅ .dockerignore 생성 (보안 설정)
+3. ✅ next.config.mjs 업데이트 (standalone 출력)
+4. ✅ package.json 업데이트 (postinstall 스크립트)
+5. ✅ GitHub 푸시 완료
 
----
+## 📋 Render 대시보드에서 설정해야 할 사항
 
-## 📋 설정된 환경 변수 확인
+### 1. 환경 변수 설정 (필수)
 
-Render 대시보드 → realxbest → Environment 탭에서 확인:
+Render 대시보드 > Service > Environment 섹션에서 다음 환경 변수를 추가하세요:
 
-- ✅ DATABASE_URL
-- ✅ YOUTUBE_API_KEY
-- ✅ YOUTUBE_API_KEYS (3개 키)
-- ✅ NEXT_PUBLIC_BASE_URL
-- ✅ NODE_ENV
+```bash
+# YouTube API 키 (다중 키 지원)
+YOUTUBE_API_KEYS=AIzaSyAQdvDGLrVzHYWz5XNKPEYCvWWJi5ZEnAY,AIzaSyCjxqyzAGEmC21uyXVk1loyvqeOi3fDaB4,AIzaSyBfD3EPz6DL6J_I05fgT9zt3_iyZ39DkpU
 
----
+# 기본 API 키 (하위 호환성)
+YOUTUBE_API_KEY=AIzaSyAQdvDGLrVzHYWz5XNKPEYCvWWJi5ZEnAY
 
-## 🔍 배포 상태 확인
+# Next.js 설정
+NEXT_PUBLIC_BASE_URL=https://realxbest.com
+NEXT_PUBLIC_APP_URL=https://realxbest.com
 
-### 1. Render 대시보드에서 확인
+# Node.js 설정
+NODE_ENV=production
+NEXT_TELEMETRY_DISABLED=1
 
-1. **Render 대시보드 접속**: https://dashboard.render.com
-2. **realxbest 서비스** 클릭
-3. **상태 확인**:
-   - 상단에 "Live" 또는 "Building" 표시 확인
-   - "Live" = 배포 완료 ✅
-   - "Building" = 배포 중 ⏳
-
-### 2. Logs 탭에서 확인
-
-1. **Logs 탭** 클릭
-2. **빌드 로그 확인**:
-   - ✅ "Build successful" 또는 "Build completed" = 성공
-   - ❌ 빌드 오류가 있으면 오류 메시지 확인
-
-**정상적인 빌드 로그 예시:**
-```
-> npm install
-> npx prisma generate
-> npm run build
-✓ Compiled successfully
+# 데이터베이스 (PostgreSQL 사용 시 - 선택사항)
+# DATABASE_URL=postgresql://user:password@host:5432/dbname?schema=public
 ```
 
----
+### 2. 빌드 설정 확인
 
-## 🌐 웹사이트 접속 테스트
+- **Build Command**: 비워두기 (Dockerfile 사용)
+- **Start Command**: 비워두기 (Dockerfile CMD 사용)
+- **Dockerfile Path**: `./Dockerfile`
 
-### 배포 완료 후:
+### 3. 자동 배포 확인
 
-1. **웹사이트 URL 접속**:
-   - https://realxbest.onrender.com
-   - 또는 https://realxbest.com (도메인 설정 시)
+- GitHub 저장소 연결 확인
+- Branch: `main`
+- Auto-Deploy: 활성화
 
-2. **확인할 사항**:
-   - ✅ 페이지가 로드되는가?
-   - ✅ 랭킹 테이블이 보이는가?
-   - ✅ 필터가 작동하는가?
-   - ✅ 채널 상세 페이지가 작동하는가?
+## 🔍 배포 후 확인 사항
 
----
+1. **배포 로그 확인**
+   - Render 대시보드 > Logs에서 빌드 및 실행 로그 확인
+   - 오류가 있으면 로그에서 확인
+
+2. **API 연동 테스트**
+   - `https://realxbest.com/api/rankings` 접속하여 데이터 확인
+   - YouTube API 키가 정상 작동하는지 확인
+
+3. **프론트엔드 확인**
+   - `https://realxbest.com` 접속하여 페이지 로드 확인
+   - 랭킹 데이터가 표시되는지 확인
 
 ## ⚠️ 문제 해결
 
-### 빌드 실패 시
+### Dockerfile 빌드 실패
+- 로컬에서 `npm run build` 성공하는지 확인
+- Prisma generate가 정상 작동하는지 확인
 
-**일반적인 원인:**
-1. 환경 변수 누락
-2. Prisma 스키마 오류
-3. 의존성 설치 실패
+### 환경 변수 오류
+- 모든 필수 환경 변수가 설정되었는지 확인
+- API 키 형식이 올바른지 확인 (쉼표로 구분)
 
-**해결 방법:**
-1. Logs 탭에서 오류 메시지 확인
-2. 환경 변수가 모두 설정되었는지 확인
-3. Build Command 확인:
-   ```
-   npm install && npx prisma generate && npm run build
-   ```
+### 데이터베이스 연결 실패
+- DATABASE_URL이 설정되지 않아도 Mock 데이터로 작동 가능
+- 실제 DB가 필요하면 Render PostgreSQL 서비스 생성 후 연결
 
-### 데이터베이스 연결 실패 시
+### API 데이터가 안 나올 때
+- YouTube API 키 할당량 확인
+- API 키가 YouTube Data API v3에 제한되어 있는지 확인
 
-**확인 사항:**
-1. DATABASE_URL이 올바른지 확인
-2. PostgreSQL 데이터베이스가 실행 중인지 확인
-3. External Connection String 사용 확인
+## 📝 다음 단계
 
-**해결 방법:**
-1. Render 대시보드 → PostgreSQL 데이터베이스 확인
-2. Connection Info → External Connection String 복사
-3. Web Service의 DATABASE_URL에 다시 설정
-
-### API 키 오류 시
-
-**확인 사항:**
-1. YOUTUBE_API_KEY가 올바른지 확인
-2. YOUTUBE_API_KEYS가 쉼표로 구분되어 있는지 확인
-3. YouTube API 쿼터 확인
-
----
-
-## 📊 Build & Start Commands 확인
-
-Render 대시보드 → Settings 탭에서 확인:
-
-**Build Command:**
-```bash
-npm install && npx prisma generate && npm run build
-```
-
-**Start Command:**
-```bash
-npm start
-```
-
----
-
-## 🎯 Prisma 마이그레이션 (필요 시)
-
-배포 후 데이터베이스 스키마를 적용해야 할 수 있습니다:
-
-**방법 1: Render Shell에서 실행**
-1. Render 대시보드 → realxbest → Shell 탭
-2. 다음 명령어 실행:
-   ```bash
-   npx prisma db push
-   ```
-
-**방법 2: 로컬에서 실행**
-1. DATABASE_URL 환경 변수 설정
-2. 다음 명령어 실행:
-   ```bash
-   cd d:\realxbest
-   npx prisma db push
-   ```
-
----
-
-## ✅ 정상 작동 확인 체크리스트
-
-- [ ] Render 대시보드에서 "Live" 상태 확인
-- [ ] 빌드 로그에서 "Build successful" 확인
-- [ ] 웹사이트 접속 가능 (https://realxbest.onrender.com)
-- [ ] 메인 페이지 로드 확인
-- [ ] 랭킹 테이블 표시 확인
-- [ ] 필터 작동 확인
-- [ ] 채널 상세 페이지 작동 확인
-- [ ] 데이터베이스 연결 확인 (채널 데이터가 보이는지)
-
----
-
-## 🎉 완료!
-
-모든 체크리스트를 통과하면 배포가 성공적으로 완료된 것입니다!
-
-문제가 있으면 Render 대시보드의 Logs 탭에서 오류 메시지를 확인하세요.
-
+1. Render 대시보드에서 환경 변수 설정
+2. 자동 배포 시작 대기 (몇 분 소요)
+3. 배포 완료 후 사이트 접속하여 테스트
+4. API 엔드포인트 테스트하여 데이터 수신 확인

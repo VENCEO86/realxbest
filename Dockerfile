@@ -37,13 +37,10 @@ RUN addgroup --system --gid 1001 nodejs
 RUN adduser --system --uid 1001 nextjs
 
 # Next.js 빌드 결과물 복사 (standalone 모드)
-COPY --from=builder /app/public ./public
+# standalone 빌드는 .next/standalone 폴더에 모든 파일을 생성함
 COPY --from=builder --chown=nextjs:nodejs /app/.next/standalone ./
 COPY --from=builder --chown=nextjs:nodejs /app/.next/static ./.next/static
-
-# Prisma 관련 파일 복사
-COPY --from=builder --chown=nextjs:nodejs /app/prisma ./prisma
-COPY --from=builder --chown=nextjs:nodejs /app/node_modules/.prisma ./node_modules/.prisma
+COPY --from=builder --chown=nextjs:nodejs /app/public ./public
 
 USER nextjs
 
@@ -52,6 +49,6 @@ EXPOSE 3000
 ENV PORT 3000
 ENV HOSTNAME "0.0.0.0"
 
-# standalone 모드에서는 server.js가 .next/standalone 폴더에 생성됨
-CMD ["node", ".next/standalone/server.js"]
+# standalone 모드에서는 server.js가 루트에 생성됨
+CMD ["node", "server.js"]
 
