@@ -27,32 +27,54 @@ export function formatNumber(num: number | bigint): string {
 
 /**
  * 차트용 숫자 포맷팅 (간단하고 읽기 쉬운 버전)
- * 예: 600000000 → 6억, 15000000 → 1,500만
+ * 예: 600000000 → 6억, 15000000 → 1,500만, 5000000 → 500만
  */
 export function formatChartNumber(num: number | bigint): string {
   const n = typeof num === 'bigint' ? Number(num) : num;
   
+  if (n === 0) return "0";
+  
+  // 억 단위
   if (n >= 100000000) {
     const eok = n / 100000000;
     if (eok >= 10) {
       return Math.floor(eok) + "억";
     }
+    if (eok % 1 === 0) {
+      return eok.toFixed(0) + "억";
+    }
     return eok.toFixed(1) + "억";
   }
+  
+  // 만 단위
   if (n >= 10000) {
     const man = n / 10000;
     if (man >= 1000) {
-      return (man / 1000).toFixed(1) + "천만";
+      const cheonman = man / 1000;
+      if (cheonman % 1 === 0) {
+        return cheonman.toFixed(0) + "천만";
+      }
+      return cheonman.toFixed(1) + "천만";
     }
     if (man >= 100) {
       return Math.floor(man) + "만";
     }
+    if (man % 1 === 0) {
+      return man.toFixed(0) + "만";
+    }
     return man.toFixed(1) + "만";
   }
+  
+  // 천 단위
   if (n >= 1000) {
-    return (n / 1000).toFixed(1) + "천";
+    const cheon = n / 1000;
+    if (cheon % 1 === 0) {
+      return cheon.toFixed(0) + "천";
+    }
+    return cheon.toFixed(1) + "천";
   }
-  return n.toString();
+  
+  return n.toLocaleString();
 }
 
 /**
