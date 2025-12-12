@@ -6,7 +6,7 @@ const YOUTUBE_API_KEY = process.env.YOUTUBE_API_KEY || process.env.YOUTUBE_API_K
 
 // 간단한 메모리 캐시 (프로덕션에서는 Redis 사용 권장)
 const cache = new Map<string, { data: any; timestamp: number }>();
-const CACHE_TTL = 5 * 60 * 1000; // 5분
+const CACHE_TTL = 10 * 60 * 1000; // 10분 (캐시 시간 증가)
 
 export async function GET(
   request: NextRequest,
@@ -19,7 +19,7 @@ export async function GET(
     if (cached && Date.now() - cached.timestamp < CACHE_TTL) {
       return NextResponse.json(cached.data, {
         headers: {
-          'Cache-Control': 'public, s-maxage=300, stale-while-revalidate=600',
+          'Cache-Control': 'public, s-maxage=600, stale-while-revalidate=1200',
         },
       });
     }
@@ -191,7 +191,7 @@ export async function GET(
 
     return NextResponse.json(formattedChannel, {
       headers: {
-        'Cache-Control': 'public, s-maxage=300, stale-while-revalidate=600',
+        'Cache-Control': 'public, s-maxage=600, stale-while-revalidate=1200',
       },
     });
   } catch (error) {

@@ -32,9 +32,9 @@ async function fetchRankings(params: URLSearchParams): Promise<{
   try {
     const url = `/api/rankings?${params.toString()}`;
     
-    // 타임아웃 설정 (10초)
+    // 타임아웃 설정 (5초로 단축)
     const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), 10000);
+    const timeoutId = setTimeout(() => controller.abort(), 5000);
     
     const response = await fetch(url, {
       signal: controller.signal,
@@ -72,10 +72,10 @@ export function RankingTable() {
   const category = searchParams.get("category");
   const country = searchParams.get("country");
   
-  // limit 최적화: 성능을 위해 최대 100개로 제한
+  // limit 최적화: 성능을 위해 최대 30개로 제한 (초기 로딩 속도 향상)
   const limit = Math.min(
-    parseInt(searchParams.get("limit") || "50"),
-    100 // 최대 100개로 제한
+    parseInt(searchParams.get("limit") || "20"),
+    30 // 최대 30개로 제한
   );
 
   const { data, isLoading, error, isError } = useQuery({
@@ -169,6 +169,8 @@ export function RankingTable() {
                     {channel.profileImageUrl && (
                       <img
                         src={channel.profileImageUrl}
+                        loading="lazy"
+                        decoding="async"
                         alt={channel.channelName}
                         className="w-8 h-8 sm:w-10 sm:h-10 rounded-full flex-shrink-0"
                         onError={(e) => {

@@ -39,18 +39,18 @@ export const dynamic = 'force-dynamic';
 
 // 간단한 메모리 캐시
 const rankingsCache = new Map<string, { data: any; timestamp: number }>();
-const RANKINGS_CACHE_TTL = 5 * 60 * 1000; // 5분 (캐시 시간 증가로 성능 향상)
+const RANKINGS_CACHE_TTL = 10 * 60 * 1000; // 10분 (캐시 시간 증가로 성능 향상)
 
 export async function GET(request: NextRequest) {
   // 캐시 키 생성
   const cacheKey = request.nextUrl.toString();
   const cached = rankingsCache.get(cacheKey);
   if (cached && Date.now() - cached.timestamp < RANKINGS_CACHE_TTL) {
-    return NextResponse.json(cached.data, {
-      headers: {
-        'Cache-Control': 'public, s-maxage=120, stale-while-revalidate=300',
-      },
-    });
+      return NextResponse.json(cached.data, {
+        headers: {
+          'Cache-Control': 'public, s-maxage=600, stale-while-revalidate=1200',
+        },
+      });
   }
 
   try {
@@ -61,9 +61,9 @@ export async function GET(request: NextRequest) {
     const period = searchParams.get("period") || "weekly";
     const page = parseInt(searchParams.get("page") || "1");
     
-    // limit 최적화: 성능을 위해 최대 100개로 제한
-    const requestedLimit = parseInt(searchParams.get("limit") || "50");
-    const limit = Math.min(requestedLimit, 100); // 최대 100개로 제한
+    // limit 최적화: 성능을 위해 최대 30개로 제한 (초기 로딩 속도 향상)
+    const requestedLimit = parseInt(searchParams.get("limit") || "20");
+    const limit = Math.min(requestedLimit, 30); // 최대 30개로 제한
     const skip = (page - 1) * limit;
 
     // 실제 YouTube API 데이터 가져오기 (데이터베이스가 없을 때)
@@ -2805,7 +2805,7 @@ export async function GET(request: NextRequest) {
       
       return NextResponse.json(result, {
         headers: {
-          'Cache-Control': 'public, s-maxage=120, stale-while-revalidate=300',
+          'Cache-Control': 'public, s-maxage=600, stale-while-revalidate=1200',
         },
       });
     }
@@ -2887,7 +2887,7 @@ export async function GET(request: NextRequest) {
 
     return NextResponse.json(result, {
       headers: {
-        'Cache-Control': 'public, s-maxage=120, stale-while-revalidate=300',
+        'Cache-Control': 'public, s-maxage=600, stale-while-revalidate=1200',
       },
     });
   } catch (error) {
