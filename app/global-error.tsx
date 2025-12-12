@@ -10,10 +10,7 @@ export default function GlobalError({
   reset: () => void;
 }) {
   useEffect(() => {
-    // #region agent log
-    fetch('http://127.0.0.1:7243/ingest/6ba67444-070e-4761-a65f-f3790b0cf0ed',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'app/global-error.tsx:10',message:'전역 에러 발생',data:{errorMessage:error.message,errorStack:error.stack?.substring(0,200),digest:error.digest},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'H'})}).catch(()=>{});
-    // #endregion
-    
+
     console.error("Global Error:", error);
   }, [error]);
 
@@ -39,6 +36,4 @@ export default function GlobalError({
     </html>
   );
 }
-
-
 

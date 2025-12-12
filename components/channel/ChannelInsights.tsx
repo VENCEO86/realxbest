@@ -17,12 +17,7 @@ interface Channel {
 }
 
 export function ChannelInsights({ channel }: { channel: Channel }) {
-  // #region agent log
-  useEffect(() => {
-    fetch('http://127.0.0.1:7243/ingest/6ba67444-070e-4761-a65f-f3790b0cf0ed',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'components/channel/ChannelInsights.tsx:18',message:'ChannelInsights 렌더링',data:{weeklySubscriberChangeRate:channel.weeklySubscriberChangeRate,weeklyViewCountChangeRate:channel.weeklyViewCountChangeRate,averageEngagementRate:channel.averageEngagementRate,currentRank:channel.currentRank},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'G'})}).catch(()=>{});
-  }, [channel]);
-  // #endregion
-  
+
   // 안전한 값 사용
   const weeklySubscriberChangeRate = typeof channel.weeklySubscriberChangeRate === 'number' ? channel.weeklySubscriberChangeRate : 0;
   const weeklyViewCountChangeRate = typeof channel.weeklyViewCountChangeRate === 'number' ? channel.weeklyViewCountChangeRate : 0;

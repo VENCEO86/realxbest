@@ -57,3 +57,4 @@ NEXT_TELEMETRY_DISABLED=1
 - DATABASE_URL이 올바른지 확인
 - Render PostgreSQL 서비스가 생성되었는지 확인
 
+

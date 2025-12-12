@@ -13,7 +13,7 @@ async function getChannel(id: string) {
     // API를 통해 채널 데이터 가져오기
     const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || "http://localhost:3001";
     const response = await fetch(`${baseUrl}/api/channels/${id}`, {
-      cache: "no-store",
+      next: { revalidate: 300 }, // 5분 캐시
     });
 
     if (!response.ok) {
@@ -59,10 +59,6 @@ export default async function ChannelPage({
       notFound();
     }
 
-  // #region agent log
-  fetch('http://127.0.0.1:7243/ingest/6ba67444-070e-4761-a65f-f3790b0cf0ed',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'app/channels/[id]/page.tsx:59',message:'채널 페이지 렌더링',data:{hasChannel:!!channel,hasGrowthData:!!channel?.growthData,growthDataCount:channel?.growthData?.length || 0,hasVideos:!!channel?.videos,videosCount:channel?.videos?.length || 0,hasWeeklySubscriberChangeRate:typeof channel?.weeklySubscriberChangeRate !== 'undefined',weeklySubscriberChangeRate:channel?.weeklySubscriberChangeRate,hasWeeklyViewCountChangeRate:typeof channel?.weeklyViewCountChangeRate !== 'undefined',weeklyViewCountChangeRate:channel?.weeklyViewCountChangeRate,hasAverageEngagementRate:typeof channel?.averageEngagementRate !== 'undefined',averageEngagementRate:channel?.averageEngagementRate},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'F'})}).catch(()=>{});
-  // #endregion
-
     // 데이터 검증 및 기본값 설정
     const safeChannel = {
       ...channel,
@@ -95,10 +91,7 @@ export default async function ChannelPage({
       </div>
     );
   } catch (error) {
-    // #region agent log
-    fetch('http://127.0.0.1:7243/ingest/6ba67444-070e-4761-a65f-f3790b0cf0ed',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'app/channels/[id]/page.tsx:97',message:'채널 페이지 에러',data:{errorMessage:error instanceof Error ? error.message : String(error),errorStack:error instanceof Error ? error.stack?.substring(0,200) : undefined},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'H'})}).catch(()=>{});
-    // #endregion
-    
+
     console.error("Channel page error:", error);
     throw error;
   }

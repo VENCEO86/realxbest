@@ -47,10 +47,6 @@ export async function fetchChannelFromYouTubeAPI(
     const statistics = channel.statistics;
 
     const handle = snippet.customUrl?.replace("@", "") || null;
-    
-    // #region agent log
-    fetch('http://127.0.0.1:7243/ingest/6ba67444-070e-4761-a65f-f3790b0cf0ed',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'lib/youtube-api.ts:52',message:'채널 데이터 파싱',data:{channelId:channel.id,channelName:snippet.title,handle,customUrl:snippet.customUrl,hasThumbnail:!!snippet.thumbnails?.high?.url},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'D'})}).catch(()=>{});
-    // #endregion
 
     return {
       channelId: channel.id,
@@ -186,9 +182,7 @@ export async function fetchChannelVideos(
   engagementRate: number;
 }>> {
   if (!apiKey) {
-    // #region agent log
-    fetch('http://127.0.0.1:7243/ingest/6ba67444-070e-4761-a65f-f3790b0cf0ed',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'lib/youtube-api.ts:182',message:'API 키 없음',data:{channelId},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'B'})}).catch(()=>{});
-    // #endregion
+    
     return [];
   }
 
@@ -198,20 +192,12 @@ export async function fetchChannelVideos(
       `https://www.googleapis.com/youtube/v3/channels?part=contentDetails&id=${channelId}&key=${apiKey}`
     );
 
-    // #region agent log
-    fetch('http://127.0.0.1:7243/ingest/6ba67444-070e-4761-a65f-f3790b0cf0ed',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'lib/youtube-api.ts:192',message:'채널 contentDetails 응답',data:{status:channelResponse.status,ok:channelResponse.ok},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'B'})}).catch(()=>{});
-    // #endregion
-
     if (!channelResponse.ok) {
       return [];
     }
 
     const channelData = await channelResponse.json();
     const uploadsPlaylistId = channelData.items?.[0]?.contentDetails?.relatedPlaylists?.uploads;
-
-    // #region agent log
-    fetch('http://127.0.0.1:7243/ingest/6ba67444-070e-4761-a65f-f3790b0cf0ed',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'lib/youtube-api.ts:199',message:'uploads playlist ID 확인',data:{hasPlaylistId:!!uploadsPlaylistId,playlistId:uploadsPlaylistId},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'B'})}).catch(()=>{});
-    // #endregion
 
     if (!uploadsPlaylistId) {
       return [];
@@ -222,20 +208,12 @@ export async function fetchChannelVideos(
       `https://www.googleapis.com/youtube/v3/playlistItems?part=snippet&playlistId=${uploadsPlaylistId}&maxResults=${maxResults}&key=${apiKey}`
     );
 
-    // #region agent log
-    fetch('http://127.0.0.1:7243/ingest/6ba67444-070e-4761-a65f-f3790b0cf0ed',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'lib/youtube-api.ts:208',message:'playlist items 응답',data:{status:playlistResponse.status,ok:playlistResponse.ok},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'B'})}).catch(()=>{});
-    // #endregion
-
     if (!playlistResponse.ok) {
       return [];
     }
 
     const playlistData = await playlistResponse.json();
     const videoIds = playlistData.items?.map((item: any) => item.snippet.resourceId.videoId) || [];
-
-    // #region agent log
-    fetch('http://127.0.0.1:7243/ingest/6ba67444-070e-4761-a65f-f3790b0cf0ed',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'lib/youtube-api.ts:216',message:'동영상 ID 추출',data:{videoIdsCount:videoIds.length,videoIds},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'B'})}).catch(()=>{});
-    // #endregion
 
     if (videoIds.length === 0) {
       return [];
@@ -251,10 +229,6 @@ export async function fetchChannelVideos(
     }
 
     const videosData = await videosResponse.json();
-
-    // #region agent log
-    fetch('http://127.0.0.1:7243/ingest/6ba67444-070e-4761-a65f-f3790b0cf0ed',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'lib/youtube-api.ts:230',message:'동영상 상세 정보 가져오기 완료',data:{itemsCount:videosData.items?.length || 0},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'B'})}).catch(()=>{});
-    // #endregion
 
     return videosData.items?.map((video: any) => {
       const snippet = video.snippet;

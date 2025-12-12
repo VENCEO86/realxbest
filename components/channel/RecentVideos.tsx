@@ -17,12 +17,7 @@ interface Video {
 }
 
 export function RecentVideos({ videos }: { videos: Video[] }) {
-  // #region agent log
-  useEffect(() => {
-    fetch('http://127.0.0.1:7243/ingest/6ba67444-070e-4761-a65f-f3790b0cf0ed',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'components/channel/RecentVideos.tsx:19',message:'RecentVideos 렌더링',data:{hasVideos:!!videos,videosLength:videos?.length || 0,firstVideoId:videos?.[0]?.id},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'G'})}).catch(()=>{});
-  }, [videos]);
-  // #endregion
-  
+
   // 안전한 데이터 처리
   const safeVideos = Array.isArray(videos) ? videos : [];
   const displayCount = 5;

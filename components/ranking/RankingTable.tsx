@@ -29,22 +29,11 @@ async function fetchRankings(params: URLSearchParams): Promise<{
   channels: Channel[];
   total: number;
 }> {
-  // #region agent log
-  fetch('http://127.0.0.1:7243/ingest/6ba67444-070e-4761-a65f-f3790b0cf0ed',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'components/ranking/RankingTable.tsx:31',message:'API 요청 시작',data:{url:`/api/rankings?${params.toString()}`},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'A'})}).catch(()=>{});
-  // #endregion
 
   const response = await fetch(`/api/rankings?${params.toString()}`);
-  
-  // #region agent log
-  fetch('http://127.0.0.1:7243/ingest/6ba67444-070e-4761-a65f-f3790b0cf0ed',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'components/ranking/RankingTable.tsx:33',message:'API 응답 수신',data:{status:response.status,ok:response.ok,statusText:response.statusText},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'A'})}).catch(()=>{});
-  // #endregion
 
   if (!response.ok) throw new Error("Failed to fetch rankings");
   const data = await response.json();
-  
-  // #region agent log
-  fetch('http://127.0.0.1:7243/ingest/6ba67444-070e-4761-a65f-f3790b0cf0ed',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'components/ranking/RankingTable.tsx:36',message:'API 데이터 파싱 완료',data:{hasChannels:!!data.channels,channelsCount:data.channels?.length||0,hasTotal:!!data.total,firstChannelHasImage:!!data.channels?.[0]?.profileImageUrl,firstChannelImageUrl:data.channels?.[0]?.profileImageUrl},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'B'})}).catch(()=>{});
-  // #endregion
 
   return data;
 }
@@ -147,15 +136,11 @@ export function RankingTable() {
                         alt={channel.channelName}
                         className="w-8 h-8 sm:w-10 sm:h-10 rounded-full flex-shrink-0"
                         onError={(e) => {
-                          // #region agent log
-                          fetch('http://127.0.0.1:7243/ingest/6ba67444-070e-4761-a65f-f3790b0cf0ed',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'components/ranking/RankingTable.tsx:116',message:'이미지 로드 실패',data:{channelId:channel.channelId,channelName:channel.channelName,profileImageUrl:channel.profileImageUrl},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'H'})}).catch(()=>{});
-                          // #endregion
+                          
                           (e.target as HTMLImageElement).style.display = 'none';
                         }}
                         onLoad={() => {
-                          // #region agent log
-                          fetch('http://127.0.0.1:7243/ingest/6ba67444-070e-4761-a65f-f3790b0cf0ed',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'components/ranking/RankingTable.tsx:123',message:'이미지 로드 성공',data:{channelId:channel.channelId,profileImageUrl:channel.profileImageUrl},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'H'})}).catch(()=>{});
-                          // #endregion
+                          
                         }}
                       />
                     )}

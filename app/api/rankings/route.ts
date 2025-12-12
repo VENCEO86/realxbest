@@ -37,10 +37,21 @@ function markKeyExhausted(apiKey: string) {
 
 export const dynamic = 'force-dynamic';
 
+// 간단한 메모리 캐시
+const rankingsCache = new Map<string, { data: any; timestamp: number }>();
+const RANKINGS_CACHE_TTL = 2 * 60 * 1000; // 2분
+
 export async function GET(request: NextRequest) {
-  // #region agent log
-  fetch('http://127.0.0.1:7243/ingest/6ba67444-070e-4761-a65f-f3790b0cf0ed',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'app/api/rankings/route.ts:7',message:'API 요청 시작',data:{url:request.nextUrl.toString()},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'A'})}).catch(()=>{});
-  // #endregion
+  // 캐시 키 생성
+  const cacheKey = request.nextUrl.toString();
+  const cached = rankingsCache.get(cacheKey);
+  if (cached && Date.now() - cached.timestamp < RANKINGS_CACHE_TTL) {
+    return NextResponse.json(cached.data, {
+      headers: {
+        'Cache-Control': 'public, s-maxage=120, stale-while-revalidate=300',
+      },
+    });
+  }
 
   try {
     const searchParams = request.nextUrl.searchParams;
@@ -2218,10 +2229,6 @@ export async function GET(request: NextRequest) {
         // 런타임에 환경 변수 다시 읽기 (Next.js 서버 재시작 없이 반영)
         const runtimeApiKeysStr = process.env.YOUTUBE_API_KEYS || process.env.YOUTUBE_API_KEY || "AIzaSyAQdvDGLrVzHYWz5XNKPEYCvWWJi5ZEnAY";
         const runtimeApiKeys = runtimeApiKeysStr.split(',').map(key => key.trim()).filter(key => key.length > 0);
-        
-        // #region agent log
-        fetch('http://127.0.0.1:7243/ingest/6ba67444-070e-4761-a65f-f3790b0cf0ed',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'app/api/rankings/route.ts:2201',message:'YouTube API 데이터 가져오기 시작',data:{channelIdsCount:channelIds.length,apiKeysCount:runtimeApiKeys.length,apiKeys:runtimeApiKeys.map(k=>k.substring(0,20))},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'E'})}).catch(()=>{});
-        // #endregion
 
         // YouTube API는 한 번에 최대 50개까지 조회 가능
         // 50개씩 나누어서 배치 처리
@@ -2256,15 +2263,9 @@ export async function GET(request: NextRequest) {
                 `https://www.googleapis.com/youtube/v3/channels?part=snippet,statistics&id=${ids}&key=${apiKey}`
               );
 
-              // #region agent log
-              fetch('http://127.0.0.1:7243/ingest/6ba67444-070e-4761-a65f-f3790b0cf0ed',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'app/api/rankings/route.ts:2200',message:'YouTube API 배치 응답',data:{batchNum,status:response.status,ok:response.ok,apiKeyUsed:apiKey.substring(0,20)},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'A'})}).catch(()=>{});
-              // #endregion
-
               if (!response.ok) {
                 if (response.status === 403) {
-                  // #region agent log
-                  fetch('http://127.0.0.1:7243/ingest/6ba67444-070e-4761-a65f-f3790b0cf0ed',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'app/api/rankings/route.ts:2205',message:'API 키 쿼터 초과, 다음 키로 시도',data:{batchNum,apiKeyUsed:apiKey.substring(0,20),attempts:attempts+1},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'A'})}).catch(()=>{});
-                  // #endregion
+                  
                   markKeyExhausted(apiKey);
                   attempts++;
                   if (attempts < maxAttempts) {
@@ -2287,9 +2288,7 @@ export async function GET(request: NextRequest) {
                 const existingIds = new Set(allChannels.map((c: any) => c.id));
                 const newItems = data.items.filter((item: any) => !existingIds.has(item.id));
                 allChannels.push(...newItems);
-                // #region agent log
-                fetch('http://127.0.0.1:7243/ingest/6ba67444-070e-4761-a65f-f3790b0cf0ed',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'app/api/rankings/route.ts:2225',message:'배치 채널 수집',data:{batchNum,itemsCount:data.items.length,firstItemHasThumbnails:!!data.items[0]?.snippet?.thumbnails,firstItemThumbnailsHigh:data.items[0]?.snippet?.thumbnails?.high?.url},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'F'})}).catch(()=>{});
-                // #endregion
+                
                 success = true;
               }
               break; // 성공 또는 다른 오류 시 루프 탈출
@@ -2304,15 +2303,9 @@ export async function GET(request: NextRequest) {
             await new Promise(resolve => setTimeout(resolve, 50));
           }
         }
-        
-        // #region agent log
-        fetch('http://127.0.0.1:7243/ingest/6ba67444-070e-4761-a65f-f3790b0cf0ed',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'app/api/rankings/route.ts:2204',message:'YouTube API 수집 완료',data:{allChannelsCount:allChannels.length,willUseMock:allChannels.length === 0},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'E'})}).catch(()=>{});
-        // #endregion
 
         if (allChannels.length === 0) {
-          // #region agent log
-          fetch('http://127.0.0.1:7243/ingest/6ba67444-070e-4761-a65f-f3790b0cf0ed',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'app/api/rankings/route.ts:2205',message:'Mock 데이터 반환',data:{reason:'allChannels.length === 0'},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'E'})}).catch(()=>{});
-          // #endregion
+          
           return await getMockData();
         }
 
@@ -2424,17 +2417,12 @@ export async function GET(request: NextRequest) {
             categoryName = "교육";
           }
 
-          // #region agent log
-          const profileImageUrl = snippet.thumbnails?.high?.url || snippet.thumbnails?.default?.url;
-          fetch('http://127.0.0.1:7243/ingest/6ba67444-070e-4761-a65f-f3790b0cf0ed',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'app/api/rankings/route.ts:2307',message:'profileImageUrl 생성',data:{channelId:item.id,channelName:snippet.title,hasThumbnails:!!snippet.thumbnails,highUrl:snippet.thumbnails?.high?.url,defaultUrl:snippet.thumbnails?.default?.url,profileImageUrl:profileImageUrl},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'E'})}).catch(()=>{});
-          // #endregion
-
           return {
             id: item.id,
             channelId: item.id,
             channelName: snippet.title,
             handle: snippet.customUrl?.replace("@", "") || snippet.title.toLowerCase().replace(/\s+/g, ""),
-            profileImageUrl: profileImageUrl,
+            profileImageUrl: snippet.thumbnails?.high?.url || snippet.thumbnails?.default?.url || null,
             category: { name: categoryName },
             subscriberCount: subCount,
             totalViewCount: viewCount,
@@ -2533,10 +2521,6 @@ export async function GET(request: NextRequest) {
           currentRank: skip + index + 1, // 페이지네이션 고려한 실제 순위
         }));
 
-        // #region agent log
-        fetch('http://127.0.0.1:7243/ingest/6ba67444-070e-4761-a65f-f3790b0cf0ed',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'app/api/rankings/route.ts:2352',message:'API 응답 반환',data:{channelsCount:paginatedChannels.length,total:rankedChannels.length,firstChannelHasImage:!!paginatedChannels[0]?.profileImageUrl},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'B'})}).catch(()=>{});
-        // #endregion
-
         return {
           channels: paginatedChannels,
           total: rankedChannels.length,
@@ -2549,9 +2533,6 @@ export async function GET(request: NextRequest) {
 
     // Mock 데이터 (API 키가 없거나 오류 시 사용)
     const getMockData = async () => {
-      // #region agent log
-      fetch('http://127.0.0.1:7243/ingest/6ba67444-070e-4761-a65f-f3790b0cf0ed',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'app/api/rankings/route.ts:2476',message:'getMockData 호출',data:{country},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'E'})}).catch(()=>{});
-      // #endregion
 
       // 실제 YouTube 채널 프로필 이미지 URL 가져오기 헬퍼
       const getChannelImageUrl = async (channelId: string): Promise<string> => {
@@ -2566,17 +2547,11 @@ export async function GET(request: NextRequest) {
 
         // 첫 번째 API 키로 시도
         const apiKey = runtimeApiKeys[0];
-        // #region agent log
-        fetch('http://127.0.0.1:7243/ingest/6ba67444-070e-4761-a65f-f3790b0cf0ed',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'app/api/rankings/route.ts:2493',message:'Mock 데이터: YouTube 이미지 URL 가져오기 시도',data:{channelId,apiKeyExists:!!apiKey},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'E'})}).catch(()=>{});
-        // #endregion
+        
         try {
           const response = await fetch(
             `https://www.googleapis.com/youtube/v3/channels?part=snippet&id=${channelId}&key=${apiKey}`
           );
-
-          // #region agent log
-          fetch('http://127.0.0.1:7243/ingest/6ba67444-070e-4761-a65f-f3790b0cf0ed',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'app/api/rankings/route.ts:2499',message:'Mock 데이터: YouTube API 응답',data:{channelId,status:response.status,ok:response.ok},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'E'})}).catch(()=>{});
-          // #endregion
 
           if (response.ok) {
             const data = await response.json();
@@ -2584,29 +2559,19 @@ export async function GET(request: NextRequest) {
               const thumbnailUrl = data.items[0].snippet?.thumbnails?.high?.url || 
                                    data.items[0].snippet?.thumbnails?.default?.url;
               if (thumbnailUrl) {
-                // #region agent log
-                fetch('http://127.0.0.1:7243/ingest/6ba67444-070e-4761-a65f-f3790b0cf0ed',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'app/api/rankings/route.ts:2508',message:'Mock 데이터: 실제 YouTube 이미지 URL 가져오기 성공',data:{channelId,thumbnailUrl},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'E'})}).catch(()=>{});
-                // #endregion
+                
                 return thumbnailUrl;
               } else {
-                // #region agent log
-                fetch('http://127.0.0.1:7243/ingest/6ba67444-070e-4761-a65f-f3790b0cf0ed',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'app/api/rankings/route.ts:2513',message:'Mock 데이터: thumbnailUrl 없음',data:{channelId},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'E'})}).catch(()=>{});
-                // #endregion
+                
               }
             } else {
-              // #region agent log
-              fetch('http://127.0.0.1:7243/ingest/6ba67444-070e-4761-a65f-f3790b0cf0ed',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'app/api/rankings/route.ts:2518',message:'Mock 데이터: items 없음',data:{channelId},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'E'})}).catch(()=>{});
-              // #endregion
+              
             }
           } else {
-            // #region agent log
-            fetch('http://127.0.0.1:7243/ingest/6ba67444-070e-4761-a65f-f3790b0cf0ed',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'app/api/rankings/route.ts:2522',message:'Mock 데이터: YouTube API 응답 실패',data:{channelId,status:response.status},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'E'})}).catch(()=>{});
-            // #endregion
+            
           }
         } catch (error) {
-          // #region agent log
-          fetch('http://127.0.0.1:7243/ingest/6ba67444-070e-4761-a65f-f3790b0cf0ed',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'app/api/rankings/route.ts:2527',message:'Mock 데이터: YouTube API 호출 예외',data:{channelId,error:error instanceof Error ? error.message : String(error)},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'E'})}).catch(()=>{});
-          // #endregion
+          
           console.error(`Failed to fetch image for channel ${channelId}:`, error);
         }
 
@@ -2629,27 +2594,18 @@ export async function GET(request: NextRequest) {
       ];
 
       // 모든 채널의 실제 프로필 이미지 URL 가져오기 (병렬 처리)
-      // #region agent log
-      fetch('http://127.0.0.1:7243/ingest/6ba67444-070e-4761-a65f-f3790b0cf0ed',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'app/api/rankings/route.ts:2557',message:'Mock 데이터: 채널 이미지 URL 가져오기 시작',data:{mockChannelIdsCount:mockChannelIds.length},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'E'})}).catch(()=>{});
-      // #endregion
+      
       const mockChannels = await Promise.all(
         mockChannelIds.map(async (c) => {
-          // #region agent log
-          fetch('http://127.0.0.1:7243/ingest/6ba67444-070e-4761-a65f-f3790b0cf0ed',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'app/api/rankings/route.ts:2560',message:'Mock 데이터: 개별 채널 이미지 URL 가져오기 시작',data:{channelId:c.channelId,channelName:c.channelName},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'E'})}).catch(()=>{});
-          // #endregion
+          
           const profileImageUrl = await getChannelImageUrl(c.channelId);
-          // #region agent log
-          fetch('http://127.0.0.1:7243/ingest/6ba67444-070e-4761-a65f-f3790b0cf0ed',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'app/api/rankings/route.ts:2564',message:'Mock 데이터: 개별 채널 이미지 URL 가져오기 완료',data:{channelId:c.channelId,profileImageUrl},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'E'})}).catch(()=>{});
-          // #endregion
+          
           return {
             ...c,
             profileImageUrl,
           };
         })
       );
-      // #region agent log
-      fetch('http://127.0.0.1:7243/ingest/6ba67444-070e-4761-a65f-f3790b0cf0ed',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'app/api/rankings/route.ts:2573',message:'Mock 데이터: 모든 채널 이미지 URL 가져오기 완료',data:{mockChannelsCount:mockChannels.length,firstChannelImageUrl:mockChannels[0]?.profileImageUrl},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'E'})}).catch(()=>{});
-      // #endregion
 
       const channelsWithCountry = mockChannels.map((c: any) => ({ 
         ...c, 
@@ -2845,11 +2801,20 @@ export async function GET(request: NextRequest) {
         return !isOfficialChannel;
       });
       
-      return NextResponse.json({
+      const result = {
         channels: filteredApiChannels,
         total: filteredApiChannels.length,
         page,
         limit,
+      };
+
+      // 캐시에 저장
+      rankingsCache.set(cacheKey, { data: result, timestamp: Date.now() });
+      
+      return NextResponse.json(result, {
+        headers: {
+          'Cache-Control': 'public, s-maxage=120, stale-while-revalidate=300',
+        },
       });
     }
 
@@ -2891,11 +2856,28 @@ export async function GET(request: NextRequest) {
       weeklyViewCountChange: Number(channel.weeklyViewCountChange),
     }));
 
-    return NextResponse.json({
+    const result = {
       channels: formattedChannels,
       total,
       page,
       limit,
+    };
+
+    // 캐시에 저장
+    rankingsCache.set(cacheKey, { data: result, timestamp: Date.now() });
+    
+    // 캐시 크기 제한 (최대 50개)
+    if (rankingsCache.size > 50) {
+      const firstKey = rankingsCache.keys().next().value;
+      if (firstKey) {
+        rankingsCache.delete(firstKey);
+      }
+    }
+
+    return NextResponse.json(result, {
+      headers: {
+        'Cache-Control': 'public, s-maxage=120, stale-while-revalidate=300',
+      },
     });
   } catch (error) {
     console.error("Error fetching rankings:", error);

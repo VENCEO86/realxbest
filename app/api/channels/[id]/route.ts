@@ -4,11 +4,26 @@ import { fetchChannelFromYouTubeAPI, fetchChannelVideos } from "@/lib/youtube-ap
 
 const YOUTUBE_API_KEY = process.env.YOUTUBE_API_KEY || process.env.YOUTUBE_API_KEYS?.split(',')[0] || "AIzaSyAQdvDGLrVzHYWz5XNKPEYCvWWJi5ZEnAY";
 
+// 간단한 메모리 캐시 (프로덕션에서는 Redis 사용 권장)
+const cache = new Map<string, { data: any; timestamp: number }>();
+const CACHE_TTL = 5 * 60 * 1000; // 5분
+
 export async function GET(
   request: NextRequest,
   { params }: { params: { id: string } }
 ) {
   try {
+    // 캐시 확인
+    const cacheKey = `channel:${params.id}`;
+    const cached = cache.get(cacheKey);
+    if (cached && Date.now() - cached.timestamp < CACHE_TTL) {
+      return NextResponse.json(cached.data, {
+        headers: {
+          'Cache-Control': 'public, s-maxage=300, stale-while-revalidate=600',
+        },
+      });
+    }
+
     // 먼저 데이터베이스에서 조회 시도
     let channel = null;
     try {
@@ -38,28 +53,14 @@ export async function GET(
 
     // 데이터베이스에 없으면 YouTube API에서 가져오기
     if (!channel && params.id.startsWith("UC")) {
-      // #region agent log
-      fetch('http://127.0.0.1:7243/ingest/6ba67444-070e-4761-a65f-f3790b0cf0ed',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'app/api/channels/[id]/route.ts:40',message:'YouTube API 호출 시작',data:{channelId:params.id,apiKeyExists:!!YOUTUBE_API_KEY},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'A'})}).catch(()=>{});
-      // #endregion
-      
+
       const youtubeData = await fetchChannelFromYouTubeAPI(params.id, YOUTUBE_API_KEY);
-      
-      // #region agent log
-      fetch('http://127.0.0.1:7243/ingest/6ba67444-070e-4761-a65f-f3790b0cf0ed',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'app/api/channels/[id]/route.ts:43',message:'YouTube 채널 데이터 가져오기 결과',data:{hasData:!!youtubeData,channelName:youtubeData?.channelName,handle:youtubeData?.handle,subscriberCount:youtubeData?.subscriberCount},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'A'})}).catch(()=>{});
-      // #endregion
-      
+
       if (youtubeData) {
         // 최근 동영상 가져오기
-        // #region agent log
-        fetch('http://127.0.0.1:7243/ingest/6ba67444-070e-4761-a65f-f3790b0cf0ed',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'app/api/channels/[id]/route.ts:45',message:'최근 동영상 가져오기 시작',data:{channelId:params.id},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'B'})}).catch(()=>{});
-        // #endregion
-        
+
         const recentVideos = await fetchChannelVideos(params.id, 5, YOUTUBE_API_KEY);
-        
-        // #region agent log
-        fetch('http://127.0.0.1:7243/ingest/6ba67444-070e-4761-a65f-f3790b0cf0ed',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'app/api/channels/[id]/route.ts:48',message:'최근 동영상 가져오기 결과',data:{videoCount:recentVideos.length,videoIds:recentVideos.map(v=>v.id)},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'B'})}).catch(()=>{});
-        // #endregion
-        
+
         // 기본 카테고리
         const defaultCategory = { id: "default", name: "기타", nameEn: "Other" };
         
@@ -106,11 +107,7 @@ export async function GET(
         const avgEngagementRate = recentVideos.length > 0
           ? recentVideos.reduce((sum, v) => sum + v.engagementRate, 0) / recentVideos.length
           : 3.5; // 기본값
-        
-        // #region agent log
-        fetch('http://127.0.0.1:7243/ingest/6ba67444-070e-4761-a65f-f3790b0cf0ed',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'app/api/channels/[id]/route.ts:68',message:'채널 객체 생성 전 데이터 확인',data:{avgEngagementRate,weeklySubscriberChangeRate:1.0,weeklyViewCountChangeRate:5.0,growthDataCount:growthData.length,videosCount:recentVideos.length},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'C'})}).catch(()=>{});
-        // #endregion
-        
+
         channel = {
           id: youtubeData.channelId,
           channelId: youtubeData.channelId,
@@ -181,11 +178,22 @@ export async function GET(
       })),
     };
 
-    // #region agent log
-    fetch('http://127.0.0.1:7243/ingest/6ba67444-070e-4761-a65f-f3790b0cf0ed',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'app/api/channels/[id]/route.ts:142',message:'채널 상세 정보 반환',data:{channelId:formattedChannel.channelId,handle:formattedChannel.handle,hasProfileImage:!!formattedChannel.profileImageUrl,weeklySubscriberChangeRate:formattedChannel.weeklySubscriberChangeRate,weeklyViewCountChangeRate:formattedChannel.weeklyViewCountChangeRate,averageEngagementRate:formattedChannel.averageEngagementRate,videosCount:formattedChannel.videos.length,growthDataCount:formattedChannel.growthData.length},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'E'})}).catch(()=>{});
-    // #endregion
+    // 캐시에 저장
+    cache.set(cacheKey, { data: formattedChannel, timestamp: Date.now() });
+    
+    // 캐시 크기 제한 (최대 100개)
+    if (cache.size > 100) {
+      const firstKey = cache.keys().next().value;
+      if (firstKey) {
+        cache.delete(firstKey);
+      }
+    }
 
-    return NextResponse.json(formattedChannel);
+    return NextResponse.json(formattedChannel, {
+      headers: {
+        'Cache-Control': 'public, s-maxage=300, stale-while-revalidate=600',
+      },
+    });
   } catch (error) {
     console.error("Error fetching channel:", error);
     return NextResponse.json(

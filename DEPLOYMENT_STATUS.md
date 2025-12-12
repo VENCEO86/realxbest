@@ -67,3 +67,4 @@ PowerShell에서 실행:
 2. ✅ `https://realxbest.com/api/rankings` API가 JSON 데이터를 반환하는지
 3. ✅ YouTube API 데이터가 정상적으로 수신되는지
 
+

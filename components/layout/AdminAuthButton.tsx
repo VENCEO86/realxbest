@@ -9,33 +9,21 @@ export function AdminAuthButton() {
   const router = useRouter();
 
   useEffect(() => {
-    // #region agent log
-    fetch('http://127.0.0.1:7243/ingest/6ba67444-070e-4761-a65f-f3790b0cf0ed',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'components/layout/AdminAuthButton.tsx:11',message:'인증 상태 확인 시작',data:{},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'E'})}).catch(()=>{});
-    // #endregion
-    
+
     // 인증 상태 확인
     fetch("/api/admin/check-auth", {
       credentials: "include", // 쿠키 포함
     })
       .then((res) => {
-        // #region agent log
-        fetch('http://127.0.0.1:7243/ingest/6ba67444-070e-4761-a65f-f3790b0cf0ed',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'components/layout/AdminAuthButton.tsx:17',message:'인증 확인 API 응답',data:{status:res.status,ok:res.ok},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'E'})}).catch(()=>{});
-        // #endregion
-        
+
         return res.json();
       })
       .then((data) => {
-        // #region agent log
-        fetch('http://127.0.0.1:7243/ingest/6ba67444-070e-4761-a65f-f3790b0cf0ed',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'components/layout/AdminAuthButton.tsx:23',message:'인증 상태 설정',data:{authenticated:data.authenticated},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'E'})}).catch(()=>{});
-        // #endregion
-        
+
         setIsAuthenticated(data.authenticated);
       })
       .catch((err) => {
-        // #region agent log
-        fetch('http://127.0.0.1:7243/ingest/6ba67444-070e-4761-a65f-f3790b0cf0ed',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'components/layout/AdminAuthButton.tsx:29',message:'인증 확인 오류',data:{errorMessage:err instanceof Error?err.message:'unknown'},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'E'})}).catch(()=>{});
-        // #endregion
-        
+
         setIsAuthenticated(false);
       });
   }, []);

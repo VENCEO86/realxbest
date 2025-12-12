@@ -15,10 +15,6 @@ export default function AdminLoginPage() {
     setError("");
     setIsLoading(true);
 
-    // #region agent log
-    fetch('http://127.0.0.1:7243/ingest/6ba67444-070e-4761-a65f-f3790b0cf0ed',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'app/admin/login/page.tsx:13',message:'로그인 폼 제출',data:{username,hasPassword:!!password},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'D'})}).catch(()=>{});
-    // #endregion
-
     try {
       const response = await fetch("/api/admin/login", {
         method: "POST",
@@ -29,21 +25,10 @@ export default function AdminLoginPage() {
         credentials: "include", // 쿠키 포함
       });
 
-      // #region agent log
-      fetch('http://127.0.0.1:7243/ingest/6ba67444-070e-4761-a65f-f3790b0cf0ed',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'app/admin/login/page.tsx:25',message:'로그인 API 응답',data:{status:response.status,ok:response.ok},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'D'})}).catch(()=>{});
-      // #endregion
-
       const data = await response.json();
 
-      // #region agent log
-      fetch('http://127.0.0.1:7243/ingest/6ba67444-070e-4761-a65f-f3790b0cf0ed',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'app/admin/login/page.tsx:30',message:'로그인 응답 데이터',data:{success:data.success,hasError:!!data.error},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'D'})}).catch(()=>{});
-      // #endregion
-
       if (response.ok && data.success) {
-        // #region agent log
-        fetch('http://127.0.0.1:7243/ingest/6ba67444-070e-4761-a65f-f3790b0cf0ed',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'app/admin/login/page.tsx:35',message:'로그인 성공 - 리다이렉트',data:{},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'D'})}).catch(()=>{});
-        // #endregion
-        
+
         console.log('[LOGIN PAGE] 로그인 성공, 리다이렉트 시작');
         
         // 로그인 성공 - 관리자 페이지로 리다이렉트
@@ -56,17 +41,11 @@ export default function AdminLoginPage() {
           window.location.href = "/admin/ads";
         }
       } else {
-        // #region agent log
-        fetch('http://127.0.0.1:7243/ingest/6ba67444-070e-4761-a65f-f3790b0cf0ed',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'app/admin/login/page.tsx:42',message:'로그인 실패',data:{error:data.error},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'D'})}).catch(()=>{});
-        // #endregion
-        
+
         setError(data.error || "로그인에 실패했습니다.");
       }
     } catch (err) {
-      // #region agent log
-      fetch('http://127.0.0.1:7243/ingest/6ba67444-070e-4761-a65f-f3790b0cf0ed',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'app/admin/login/page.tsx:47',message:'로그인 예외 발생',data:{errorMessage:err instanceof Error?err.message:'unknown'},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'D'})}).catch(()=>{});
-      // #endregion
-      
+
       setError("로그인 중 오류가 발생했습니다.");
     } finally {
       setIsLoading(false);

@@ -11,10 +11,7 @@ export default function Error({
   reset: () => void;
 }) {
   useEffect(() => {
-    // #region agent log
-    fetch('http://127.0.0.1:7243/ingest/6ba67444-070e-4761-a65f-f3790b0cf0ed',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'app/error.tsx:10',message:'에러 페이지 표시',data:{errorMessage:error.message,errorStack:error.stack?.substring(0,200),digest:error.digest},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'H'})}).catch(()=>{});
-    // #endregion
-    
+
     console.error("Error:", error);
   }, [error]);
 
@@ -44,6 +41,4 @@ export default function Error({
     </div>
   );
 }
-
-
 
