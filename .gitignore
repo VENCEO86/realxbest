@@ -24,9 +24,41 @@ npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
 
-# local env files
-.env*.local
+# 🔒 SECURITY: Environment variables and secrets
 .env
+.env.local
+.env*.local
+.env.development
+.env.production
+.env.test
+.env.staging
+*.env
+*.env.*
+
+# 🔒 SECURITY: API Keys and secrets
+**/api-keys.*
+**/secrets.*
+**/*secret*
+**/*key*
+**/*password*
+**/*token*
+**/*credential*
+
+# 🔒 SECURITY: Certificate files
+*.pem
+*.key
+*.crt
+*.cert
+*.p12
+*.pfx
+*.jks
+
+# 🔒 SECURITY: Database files (local)
+*.db
+*.sqlite
+*.sqlite3
+/prisma/dev.db
+/prisma/*.db
 
 # vercel
 .vercel
@@ -38,4 +70,32 @@ next-env.d.ts
 # prisma
 /prisma/migrations
 
+# 🔒 SECURITY: Logs (may contain sensitive info)
+*.log
+logs/
+*.log.*
+
+# 🔒 SECURITY: Backup files
+*.bak
+*.backup
+*.old
+*~
+
+# 🔒 SECURITY: OS files
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# 🔒 SECURITY: IDE and editor files
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.cursor/
+
+# 🔒 SECURITY: Temporary files
+tmp/
+temp/
+*.tmp
 
