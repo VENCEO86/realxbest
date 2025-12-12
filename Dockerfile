@@ -3,12 +3,12 @@ FROM node:20-alpine AS base
 
 # 의존성 설치 단계
 FROM base AS deps
-RUN apk add --no-cache libc6-compat openssl
+RUN apk add --no-cache libc6-compat openssl python3 make g++
 WORKDIR /app
 
 # package.json과 package-lock.json 복사
 COPY package.json package-lock.json* ./
-RUN npm ci
+RUN npm ci --legacy-peer-deps || npm install --legacy-peer-deps
 
 # 빌드 단계
 FROM base AS builder
