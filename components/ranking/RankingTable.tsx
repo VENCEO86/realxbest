@@ -32,10 +32,10 @@ async function fetchRankings(params: URLSearchParams): Promise<{
   try {
     const url = `/api/rankings?${params.toString()}`;
     const response = await fetch(url, {
-      next: { revalidate: 120 }, // 2분 캐시
       headers: {
         'Content-Type': 'application/json',
       },
+      cache: 'no-store', // 클라이언트 컴포넌트에서는 React Query가 캐싱 처리
     });
 
     if (!response.ok) {
