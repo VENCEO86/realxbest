@@ -8,7 +8,11 @@ WORKDIR /app
 
 # package.json과 package-lock.json 복사
 COPY package.json package-lock.json* ./
-RUN npm ci --legacy-peer-deps || npm install --legacy-peer-deps
+
+# npm ci는 엄격한 검증으로 실패할 수 있으므로 npm install 사용
+# --legacy-peer-deps: peer dependency 충돌 무시
+# --no-audit: 보안 감사 스킵 (빌드 속도 향상)
+RUN npm install --legacy-peer-deps --no-audit
 
 # 빌드 단계
 FROM base AS builder
