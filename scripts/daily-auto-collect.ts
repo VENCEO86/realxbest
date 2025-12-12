@@ -198,7 +198,10 @@ async function getOrCreateCategory(name: string, nameEn: string): Promise<string
   
   if (!category) {
     category = await prisma.category.create({
-      data: { name, nameEn },
+      data: { 
+        name, 
+        nameEn,
+      },
     });
   }
   
@@ -298,34 +301,30 @@ async function collectChannelsForCountryCategory(
   
   const allChannelIds = new Set<string>();
   
-  // 카테고리 키워드로 검색 (병렬 처리로 속도 향상)
-  const searchPromises: Promise<void>[] = [];
-  
-  for (const keyword of category.keywords.slice(0, 3)) { // 상위 3개 키워드만 사용
+  // 카테고리 키워드로 검색 (순차 처리로 안정성 확보)
+  for (const keyword of category.keywords.slice(0, 5)) { // 상위 5개 키워드 사용
     const queries = [
       `${countryName} ${keyword}`,
       `${keyword} ${countryName}`,
+      `top ${countryName} ${keyword}`,
     ];
     
     for (const query of queries) {
       if (allChannelIds.size >= needToCollect * 1.5) break;
       
-      searchPromises.push(
-        searchChannels(query, 50, countryCode).then(channels => {
-          for (const ch of channels) {
-            if (ch.channelId) {
-              allChannelIds.add(ch.channelId);
-            }
-          }
-        })
-      );
+      const channels = await searchChannels(query, 50, countryCode);
+      for (const ch of channels) {
+        if (ch.channelId) {
+          allChannelIds.add(ch.channelId);
+        }
+      }
       
-      // Rate limiting
-      await new Promise(resolve => setTimeout(resolve, 150));
+      // Rate limiting (API 할당량 보호)
+      await new Promise(resolve => setTimeout(resolve, 200));
     }
+    
+    if (allChannelIds.size >= needToCollect * 1.5) break;
   }
-  
-  await Promise.all(searchPromises);
   
   console.log(`    📊 ${allChannelIds.size}개 채널 ID 수집 완료`);
   
