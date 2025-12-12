@@ -23,7 +23,8 @@ const dailyQuotaUsed = new Map<string, number>(); // 키별 일일 사용량
 const QUOTA_LIMIT_PER_KEY = 9000; // 키당 일일 할당량 (안전 마진)
 
 // 목표 설정
-const TARGET_CHANNELS_PER_COUNTRY_CATEGORY = 300;
+const TARGET_CHANNELS_PER_COUNTRY_CATEGORY = 300; // 최종 목표
+const MIN_REQUIRED_CHANNELS = 100; // 최소 보장 개수 (광고 삽입을 위한 최소 데이터)
 const MIN_SUBSCRIBER_COUNT = 1000;
 const MIN_VIEW_COUNT = 10000;
 
@@ -291,13 +292,21 @@ async function collectChannelsForCountryCategory(
   // 현재 채널 수 확인
   const currentCount = await getChannelCount(countryCode, categoryId);
   
-  if (currentCount >= TARGET_CHANNELS_PER_COUNTRY_CATEGORY) {
+  // 최소 개수 미달 시 우선 수집
+  if (currentCount < MIN_REQUIRED_CHANNELS) {
+    const needToCollect = MIN_REQUIRED_CHANNELS - currentCount;
+    console.log(`  ⚠️ ${countryName} - ${category.name}: ${currentCount}개 (최소 ${MIN_REQUIRED_CHANNELS}개 미달, ${needToCollect}개 긴급 수집 필요)`);
+  } else if (currentCount >= TARGET_CHANNELS_PER_COUNTRY_CATEGORY) {
     console.log(`  ✅ ${countryName} - ${category.name}: ${currentCount}개 (목표 달성)`);
+    // 목표 달성해도 기존 채널 업데이트는 수행 (데이터 롤링)
     return { collected: 0, saved: 0 };
   }
   
-  const needToCollect = TARGET_CHANNELS_PER_COUNTRY_CATEGORY - currentCount;
-  console.log(`  🎯 ${countryName} - ${category.name}: ${currentCount}/${TARGET_CHANNELS_PER_COUNTRY_CATEGORY}개 (${needToCollect}개 필요)`);
+  const needToCollect = Math.max(
+    MIN_REQUIRED_CHANNELS - currentCount, // 최소 보장
+    TARGET_CHANNELS_PER_COUNTRY_CATEGORY - currentCount // 목표 달성
+  );
+  console.log(`  🎯 ${countryName} - ${category.name}: ${currentCount}/${TARGET_CHANNELS_PER_COUNTRY_CATEGORY}개 (최소: ${MIN_REQUIRED_CHANNELS}개, ${needToCollect}개 필요)`);
   
   const allChannelIds = new Set<string>();
   

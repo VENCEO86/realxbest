@@ -222,3 +222,16 @@ model CollaborationInquiry {
   @@index([createdAt])
   @@map("collaboration_inquiries")
 }
+
+model FaviconConfig {
+  id        String   @id @default(cuid())
+  favicon16 String?  // 16x16 파비콘 URL
+  favicon32 String?  // 32x32 파비콘 URL
+  favicon48 String?  // 48x48 파비콘 URL
+  appleTouchIcon String? // Apple Touch Icon (180x180)
+  status    String   @default("active") // active, inactive
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("favicon_configs")
+}

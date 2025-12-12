@@ -10,6 +10,8 @@ export function AdminNav() {
     { href: "/admin/collaborations", label: "협업문의" },
     { href: "/admin/ads", label: "광고관리" },
     { href: "/admin/pixels", label: "픽셀관리" },
+    { href: "/admin/favicon", label: "파비콘관리" },
+    { href: "/admin/seo", label: "SEO관리" },
   ];
 
   return (
