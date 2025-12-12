@@ -2881,14 +2881,23 @@ export async function GET(request: NextRequest) {
     });
   } catch (error) {
     console.error("Error fetching rankings:", error);
+    
+    // 에러 발생 시 빈 배열 반환 (프론트엔드에서 처리)
     return NextResponse.json(
       { 
         error: "Failed to fetch rankings",
         channels: [],
         total: 0,
-        message: "데이터를 불러오는 중 오류가 발생했습니다."
+        page: 1,
+        limit: 100,
+        message: error instanceof Error ? error.message : "데이터를 불러오는 중 오류가 발생했습니다."
       },
-      { status: 500 }
+      { 
+        status: 500,
+        headers: {
+          'Cache-Control': 'no-store', // 에러는 캐시하지 않음
+        },
+      }
     );
   }
 }

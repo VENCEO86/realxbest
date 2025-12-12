@@ -9,8 +9,11 @@ export function Providers({ children }: { children: React.ReactNode }) {
       new QueryClient({
         defaultOptions: {
           queries: {
-            staleTime: 60 * 1000, // 1 minute
+            staleTime: 2 * 60 * 1000, // 2 minutes (캐시 시간 증가)
+            gcTime: 5 * 60 * 1000, // 5 minutes (React Query v5에서는 gcTime 사용)
             refetchOnWindowFocus: false,
+            retry: 1, // 재시도 1회만
+            retryDelay: 1000, // 1초 후 재시도
           },
         },
       })

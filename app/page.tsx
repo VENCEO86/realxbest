@@ -21,11 +21,20 @@ export default function HomePage() {
       {/* 검색 바 */}
       <ChannelSearchBar />
 
-      <Suspense fallback={<div className="text-center py-8">로딩 중...</div>}>
+      <Suspense fallback={
+        <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-4 mb-6 animate-pulse">
+          <div className="h-10 bg-gray-200 dark:bg-gray-700 rounded"></div>
+        </div>
+      }>
         <RankingFilters />
       </Suspense>
 
-      <Suspense fallback={<div className="text-center py-8">로딩 중...</div>}>
+      <Suspense fallback={
+        <div className="text-center py-12">
+          <div className="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+          <p className="mt-4 text-gray-600 dark:text-gray-400">랭킹 데이터를 불러오는 중...</p>
+        </div>
+      }>
         <RankingTable />
       </Suspense>
 

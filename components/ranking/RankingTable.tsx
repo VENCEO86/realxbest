@@ -29,13 +29,30 @@ async function fetchRankings(params: URLSearchParams): Promise<{
   channels: Channel[];
   total: number;
 }> {
+  try {
+    const url = `/api/rankings?${params.toString()}`;
+    const response = await fetch(url, {
+      next: { revalidate: 120 }, // 2분 캐시
+      headers: {
+        'Content-Type': 'application/json',
+      },
+    });
 
-  const response = await fetch(`/api/rankings?${params.toString()}`);
+    if (!response.ok) {
+      throw new Error(`API 오류: ${response.status}`);
+    }
 
-  if (!response.ok) throw new Error("Failed to fetch rankings");
-  const data = await response.json();
+    const data = await response.json();
+    
+    if (!data || !Array.isArray(data.channels)) {
+      throw new Error('잘못된 데이터 형식');
+    }
 
-  return data;
+    return data;
+  } catch (error) {
+    console.error('Rankings fetch error:', error);
+    throw error;
+  }
 }
 
 export function RankingTable() {
@@ -57,24 +74,39 @@ export function RankingTable() {
   
   const limit = parseInt(searchParams.get("limit") || String(defaultLimit));
 
-  const { data, isLoading, error } = useQuery({
+  const { data, isLoading, error, isError } = useQuery({
     queryKey: ["rankings", searchParams.toString()],
     queryFn: () => fetchRankings(searchParams),
+    staleTime: 2 * 60 * 1000, // 2분 캐시
+    retry: 1,
   });
 
   if (isLoading) {
     return (
       <div className="text-center py-12">
         <div className="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
-        <p className="mt-4 text-gray-600">로딩 중...</p>
+        <p className="mt-4 text-gray-600 dark:text-gray-400">데이터를 불러오는 중...</p>
       </div>
     );
   }
 
-  if (error) {
+  if (isError || error) {
     return (
-      <div className="text-center py-12 text-red-600">
-        데이터를 불러오는 중 오류가 발생했습니다.
+      <div className="text-center py-12">
+        <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg p-6 max-w-md mx-auto">
+          <p className="text-red-600 dark:text-red-400 font-semibold mb-2">
+            데이터를 불러오는 중 오류가 발생했습니다.
+          </p>
+          <p className="text-sm text-gray-600 dark:text-gray-400 mb-4">
+            잠시 후 다시 시도해주세요.
+          </p>
+          <button
+            onClick={() => window.location.reload()}
+            className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 text-sm"
+          >
+            새로고침
+          </button>
+        </div>
       </div>
     );
   }
