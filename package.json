@@ -21,7 +21,10 @@
     "setup-env": "powershell -ExecutionPolicy Bypass -File scripts/setup-env.ps1",
     "test-endpoints": "tsx scripts/test-all-endpoints.ts",
     "pre-release-check": "powershell -ExecutionPolicy Bypass -File scripts/pre-release-check.ps1",
-    "check-db": "tsx scripts/check-db-connection.ts"
+    "check-db": "tsx scripts/check-db-connection.ts",
+    "setup-db": "tsx scripts/setup-db-auto.ts",
+    "collect-daily": "tsx scripts/daily-channel-collector.ts",
+    "collect-auto": "npm run setup-db && npm run collect-daily"
   },
   "dependencies": {
     "@dnd-kit/core": "^6.1.0",
