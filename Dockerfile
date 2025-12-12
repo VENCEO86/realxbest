@@ -6,17 +6,20 @@ FROM base AS deps
 RUN apk add --no-cache libc6-compat openssl python3 make g++
 WORKDIR /app
 
-# package.json만 먼저 복사 (package-lock.json은 나중에)
+# package.json만 복사 (package-lock.json 무시 - Docker에서 재생성)
 COPY package.json ./
 
-# npm 버전 확인 및 업데이트
-RUN npm install -g npm@latest
+# npm 캐시 클리어 및 최신 버전 설치
+RUN npm cache clean --force && \
+    npm install -g npm@latest
 
-# postinstall 스크립트 비활성화하고 의존성 설치
-# --ignore-scripts: postinstall 스크립트 스킵 (Prisma는 나중에 수동 실행)
+# 의존성 설치 (package-lock.json 없이 깨끗한 설치)
+# --ignore-scripts: postinstall 스크립트 스킵
 # --legacy-peer-deps: peer dependency 충돌 무시
 # --no-audit: 보안 감사 스킵
-RUN npm install --ignore-scripts --legacy-peer-deps --no-audit
+# --prefer-offline: 오프라인 캐시 우선 사용
+RUN npm install --ignore-scripts --legacy-peer-deps --no-audit --prefer-offline || \
+    npm install --ignore-scripts --legacy-peer-deps --no-audit
 
 # 빌드 단계
 FROM base AS builder
