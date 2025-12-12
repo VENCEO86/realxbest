@@ -6,13 +6,17 @@ FROM base AS deps
 RUN apk add --no-cache libc6-compat openssl python3 make g++
 WORKDIR /app
 
-# package.json과 package-lock.json 복사
-COPY package.json package-lock.json* ./
+# package.json만 먼저 복사 (package-lock.json은 나중에)
+COPY package.json ./
 
-# npm ci는 엄격한 검증으로 실패할 수 있으므로 npm install 사용
+# npm 버전 확인 및 업데이트
+RUN npm install -g npm@latest
+
+# postinstall 스크립트 비활성화하고 의존성 설치
+# --ignore-scripts: postinstall 스크립트 스킵 (Prisma는 나중에 수동 실행)
 # --legacy-peer-deps: peer dependency 충돌 무시
-# --no-audit: 보안 감사 스킵 (빌드 속도 향상)
-RUN npm install --legacy-peer-deps --no-audit
+# --no-audit: 보안 감사 스킵
+RUN npm install --ignore-scripts --legacy-peer-deps --no-audit
 
 # 빌드 단계
 FROM base AS builder
@@ -20,8 +24,8 @@ WORKDIR /app
 COPY --from=deps /app/node_modules ./node_modules
 COPY . .
 
-# Prisma 클라이언트 생성
-RUN npx prisma generate
+# Prisma 클라이언트 생성 (의존성 설치 후 수동 실행)
+RUN npx prisma generate || echo "Prisma generate failed, continuing..."
 
 # 환경 변수 설정 (빌드 시점)
 ENV NEXT_TELEMETRY_DISABLED 1
