@@ -6,8 +6,11 @@ services:
     dockerfilePath: ./Dockerfile
     dockerContext: .
     plan: free
+    # Dockerfile을 사용하므로 buildCommand와 startCommand는 비워둠
     buildCommand: ""
     startCommand: ""
+    # Docker Command도 비워둠 (Dockerfile의 CMD 사용)
+    dockerCommand: ""
     envVars:
       - key: NODE_ENV
         value: production
@@ -19,4 +22,5 @@ services:
       # - DATABASE_URL (PostgreSQL 사용 시)
       # - NEXT_PUBLIC_BASE_URL
       # - NEXT_PUBLIC_APP_URL
+
 
