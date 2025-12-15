@@ -25,12 +25,18 @@ interface Channel {
   lastUpdated: Date;
 }
 
-async function fetchRankings(params: URLSearchParams): Promise<{
+async function fetchRankings(params: URLSearchParams, limit: number = 200): Promise<{
   channels: Channel[];
   total: number;
 }> {
   try {
-    const url = `/api/rankings?${params.toString()}`;
+    // limit 파라미터가 없으면 명시적으로 추가 (최소 200개)
+    const apiParams = new URLSearchParams(params.toString());
+    if (!apiParams.has("limit")) {
+      apiParams.set("limit", String(limit));
+    }
+    
+    const url = `/api/rankings?${apiParams.toString()}`;
     
     // 타임아웃 설정 (5초로 단축)
     const controller = new AbortController();
@@ -79,8 +85,8 @@ export function RankingTable() {
   );
 
   const { data, isLoading, error, isError } = useQuery({
-    queryKey: ["rankings", searchParams.toString()],
-    queryFn: () => fetchRankings(searchParams),
+    queryKey: ["rankings", searchParams.toString(), limit],
+    queryFn: () => fetchRankings(searchParams, limit),
     staleTime: 2 * 60 * 1000, // 2분 캐시
     retry: 1,
   });
