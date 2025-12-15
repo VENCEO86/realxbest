@@ -297,9 +297,9 @@ async function collectChannelsForCountryCategory(
     const needToCollect = MIN_REQUIRED_CHANNELS - currentCount;
     console.log(`  ⚠️ ${countryName} - ${category.name}: ${currentCount}개 (최소 ${MIN_REQUIRED_CHANNELS}개 미달, ${needToCollect}개 긴급 수집 필요)`);
   } else if (currentCount >= TARGET_CHANNELS_PER_COUNTRY_CATEGORY) {
-    console.log(`  ✅ ${countryName} - ${category.name}: ${currentCount}개 (목표 달성)`);
+    console.log(`  ✅ ${countryName} - ${category.name}: ${currentCount}개 (목표 달성, 기존 채널 업데이트 계속)`);
     // 목표 달성해도 기존 채널 업데이트는 수행 (데이터 롤링)
-    return { collected: 0, saved: 0 };
+    // return { collected: 0, saved: 0 }; // 제거: 데이터 롤링을 위해 계속 진행
   }
   
   const needToCollect = Math.max(

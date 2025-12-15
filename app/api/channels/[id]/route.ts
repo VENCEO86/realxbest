@@ -47,8 +47,7 @@ export async function GET(
         },
       });
     } catch (dbError) {
-      // 데이터베이스 오류 무시하고 YouTube API로 진행
-      console.log("Database not available, using YouTube API");
+      // 데이터베이스 오류 무시하고 YouTube API로 진행 (로그 제거 - 성능 최적화)
     }
 
     // 데이터베이스에 없으면 YouTube API에서 가져오기

@@ -32,7 +32,7 @@ function getNextApiKey(): string {
  */
 function markKeyExhausted(apiKey: string) {
   exhaustedKeys.add(apiKey);
-  console.log(`  🚫 API 키 소진됨: ${apiKey.substring(0, 20)}... (남은 키: ${YOUTUBE_API_KEYS.length - exhaustedKeys.size}개)`);
+  // API 키 소진 로그 제거 (성능 최적화)
 }
 
 export const dynamic = 'force-dynamic';
@@ -2264,11 +2264,11 @@ export async function GET(request: NextRequest) {
                     apiKey = getNextRuntimeApiKey();
                     continue;
                   } else {
-                    console.error(`YouTube API error (batch ${batchNum}): 모든 키 소진`);
+                    // 모든 키 소진 (에러 로그 제거 - 성능 최적화)
                     break;
                   }
                 } else {
-                  console.error(`YouTube API error (batch ${batchNum}):`, response.status);
+                  // YouTube API 에러 (에러 로그 제거 - 성능 최적화)
                   break;
                 }
               }
@@ -2285,7 +2285,7 @@ export async function GET(request: NextRequest) {
               }
               break; // 성공 또는 다른 오류 시 루프 탈출
             } catch (error) {
-              console.error(`YouTube API error (batch ${batchNum}):`, error);
+              // YouTube API 에러 (에러 로그 제거 - 성능 최적화)
               break;
             }
           }
@@ -2518,7 +2518,7 @@ export async function GET(request: NextRequest) {
           total: rankedChannels.length,
         };
       } catch (error) {
-        console.error("YouTube API error:", error);
+        // YouTube API 에러 (에러 로그 제거 - 성능 최적화)
         return await getMockData();
       }
     };
@@ -2564,7 +2564,7 @@ export async function GET(request: NextRequest) {
           }
         } catch (error) {
           
-          console.error(`Failed to fetch image for channel ${channelId}:`, error);
+          // 이미지 가져오기 실패 (에러 로그 제거 - 성능 최적화)
         }
 
         // API 호출 실패 시 placeholder 사용
@@ -2690,7 +2690,7 @@ export async function GET(request: NextRequest) {
     try {
       await prisma.$connect();
     } catch (dbError) {
-      console.error("Database connection error:", dbError);
+      // 데이터베이스 연결 에러 (에러 로그 제거 - 성능 최적화)
       useMock = true;
     }
 
@@ -2902,7 +2902,7 @@ export async function GET(request: NextRequest) {
       },
     });
   } catch (error) {
-    console.error("Error fetching rankings:", error);
+    // 랭킹 가져오기 에러 (에러 로그 제거 - 성능 최적화)
     
     // 에러 발생 시 빈 배열 반환 (프론트엔드에서 처리)
     return NextResponse.json(
