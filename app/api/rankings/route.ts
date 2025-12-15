@@ -2829,6 +2829,7 @@ export async function GET(request: NextRequest) {
           currentRank: true,
           rankChange: true,
           lastUpdated: true,
+          country: true, // 국가 코드 추가
           category: {
             select: {
               name: true,
@@ -2857,14 +2858,24 @@ export async function GET(request: NextRequest) {
       return !isOfficialChannel;
     });
 
-    // BigInt를 Number로 변환
+    // BigInt를 Number로 변환 및 필드명 매핑
     const formattedChannels = filteredChannels.map((channel: any) => ({
-      ...channel,
+      id: channel.id,
+      channelId: channel.channelId,
+      name: channel.channelName || "", // channelName -> name 매핑
+      handle: channel.handle,
+      profileImageUrl: channel.profileImageUrl,
       subscriberCount: Number(channel.subscriberCount),
       totalViewCount: Number(channel.totalViewCount),
-      weeklyViewCount: Number(channel.weeklyViewCount),
-      weeklySubscriberChange: Number(channel.weeklySubscriberChange),
-      weeklyViewCountChange: Number(channel.weeklyViewCountChange),
+      weeklyViewCount: Number(channel.weeklyViewCount || 0),
+      weeklySubscriberChangeRate: channel.weeklySubscriberChangeRate || 0,
+      weeklyViewCountChangeRate: channel.weeklyViewCountChangeRate || 0,
+      averageEngagementRate: channel.averageEngagementRate || 0,
+      currentRank: channel.currentRank,
+      rankChange: channel.rankChange,
+      lastUpdated: channel.lastUpdated,
+      countryCode: channel.country || "", // country -> countryCode 매핑
+      categoryName: channel.category?.name || "", // category.name -> categoryName 매핑
     }));
 
     const result = {
