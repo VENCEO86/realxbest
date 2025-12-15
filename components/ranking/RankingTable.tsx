@@ -6,6 +6,7 @@ import Link from "next/link";
 import { useSearchParams, useRouter } from "next/navigation";
 import { formatNumber } from "@/lib/utils";
 import { AdPlacement } from "@/components/ads/AdPlacement";
+import { Pagination } from "@/components/ranking/Pagination";
 
 interface Channel {
   id: string;
@@ -78,10 +79,10 @@ export function RankingTable() {
   const category = searchParams.get("category");
   const country = searchParams.get("country");
   
-  // limit 설정: 광고 삽입을 위해 충분한 데이터 필요 (최소 200개 이상)
+  // limit 설정: 페이지네이션을 위해 200개씩 고정
   const limit = Math.min(
-    parseInt(searchParams.get("limit") || "200"),
-    500 // 최대 500개로 제한 (광고 삽입 고려)
+    Math.max(parseInt(searchParams.get("limit") || "200"), 200),
+    500 // 최소 200개, 최대 500개
   );
 
   const { data, isLoading, error, isError } = useQuery({
@@ -238,45 +239,11 @@ export function RankingTable() {
         </table>
       </div>
 
-      <div className="px-4 py-3 border-t flex items-center justify-between">
-        <div className="text-sm text-gray-600">
-          총 {data.total}개 채널
-        </div>
-        <div className="flex gap-2">
-          <button
-            onClick={async () => {
-              try {
-                const params = new URLSearchParams(searchParams.toString());
-                params.set("page", String(page - 1));
-                await router.push(`/?${params.toString()}`);
-                router.refresh();
-              } catch (error) {
-                console.error("Navigation error:", error);
-              }
-            }}
-            disabled={page === 1}
-            className="px-3 py-1 border rounded disabled:opacity-50 cursor-pointer hover:bg-gray-100"
-          >
-            이전
-          </button>
-          <button
-            onClick={async () => {
-              try {
-                const params = new URLSearchParams(searchParams.toString());
-                params.set("page", String(page + 1));
-                await router.push(`/?${params.toString()}`);
-                router.refresh();
-              } catch (error) {
-                console.error("Navigation error:", error);
-              }
-            }}
-            disabled={page * limit >= data.total}
-            className="px-3 py-1 border rounded disabled:opacity-50 cursor-pointer hover:bg-gray-100"
-          >
-            다음
-          </button>
-        </div>
-      </div>
+      <Pagination
+        currentPage={page}
+        totalItems={data.total}
+        itemsPerPage={limit}
+      />
     </div>
   );
 }
