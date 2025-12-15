@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { COUNTRIES, REGIONS, getCountriesByRegion } from "@/lib/countries";
 
@@ -42,12 +42,29 @@ export function RankingFilters() {
   const [country, setCountry] = useState(searchParams.get("country") || "all");
   const [selectedRegion, setSelectedRegion] = useState("all");
 
-  const handleFilterChange = async (key: string, value: string) => {
+  // URL 파라미터 변경 시 상태 동기화
+  useEffect(() => {
+    const urlCategory = searchParams.get("category") || "all";
+    const urlSortBy = searchParams.get("sortBy") || "subscribers";
+    const urlPeriod = searchParams.get("period") || "weekly";
+    const urlCountry = searchParams.get("country") || "all";
+    
+    if (urlCategory !== category) setCategory(urlCategory);
+    if (urlSortBy !== sortBy) setSortBy(urlSortBy);
+    if (urlPeriod !== period) setPeriod(urlPeriod);
+    if (urlCountry !== country) setCountry(urlCountry);
+  }, [searchParams, category, sortBy, period, country]);
+
+  const handleFilterChange = (key: string, value: string) => {
     try {
       const params = new URLSearchParams(searchParams.toString());
       params.set(key, value);
-      await router.push(`/?${params.toString()}`);
-      router.refresh();
+      // 페이지 번호 초기화 (필터 변경 시 첫 페이지로)
+      if (key !== "page") {
+        params.set("page", "1");
+      }
+      // router.replace를 사용하여 즉시 URL 업데이트 (히스토리 스택에 쌓이지 않음)
+      router.replace(`/?${params.toString()}`, { scroll: false });
     } catch (error) {
       console.error("Filter change error:", error);
     }
@@ -85,8 +102,9 @@ export function RankingFilters() {
             <select
               value={country}
               onChange={(e) => {
-                setCountry(e.target.value);
-                handleFilterChange("country", e.target.value);
+                const newValue = e.target.value;
+                setCountry(newValue);
+                handleFilterChange("country", newValue);
               }}
               className="w-full px-3 py-2 border rounded-md dark:bg-gray-700 dark:border-gray-600"
             >
@@ -104,8 +122,9 @@ export function RankingFilters() {
           <select
             value={category}
             onChange={(e) => {
-              setCategory(e.target.value);
-              handleFilterChange("category", e.target.value);
+              const newValue = e.target.value;
+              setCategory(newValue);
+              handleFilterChange("category", newValue);
             }}
             className="w-full px-3 py-2 border rounded-md dark:bg-gray-700 dark:border-gray-600"
           >
