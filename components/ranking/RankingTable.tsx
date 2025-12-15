@@ -12,6 +12,7 @@ interface Channel {
   id: string;
   channelId: string;
   channelName: string;
+  name?: string; // 하위 호환성을 위한 선택적 필드
   handle: string | null;
   profileImageUrl: string | null;
   category: { name: string };

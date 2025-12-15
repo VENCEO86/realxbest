@@ -398,6 +398,17 @@ async function fetchChannelDetails(channelIds: string[], targetCountryCode?: str
           const subscriberCount = parseInt(stats.subscriberCount || "0");
           const viewCount = parseInt(stats.viewCount || "0");
           
+          // NoxInfluencer 벤치마킹: 프로필 이미지가 필수 조건
+          const profileImageUrl = snippet.thumbnails?.high?.url 
+            || snippet.thumbnails?.medium?.url 
+            || snippet.thumbnails?.default?.url 
+            || null;
+          
+          // 프로필 이미지가 없으면 제외 (NoxInfluencer 기준)
+          if (!profileImageUrl) {
+            continue;
+          }
+          
           if (subscriberCount >= minStandards.subscribers && viewCount >= minStandards.views) {
             const channelCountry = snippet.country || null;
             
@@ -410,17 +421,11 @@ async function fetchChannelDetails(channelIds: string[], targetCountryCode?: str
               }
             }
             
-            // 프로필 이미지 URL 우선순위: high > medium > default
-            const profileImageUrl = snippet.thumbnails?.high?.url 
-              || snippet.thumbnails?.medium?.url 
-              || snippet.thumbnails?.default?.url 
-              || null;
-            
             results.push({
               channelId: item.id,
               channelName: snippet.title,
               handle: snippet.customUrl?.replace("@", "") || null,
-              profileImageUrl: profileImageUrl, // 명시적으로 처리
+              profileImageUrl: profileImageUrl, // 필수 조건 통과
               subscriberCount,
               totalViewCount: viewCount,
               videoCount: parseInt(stats.videoCount || "0"),

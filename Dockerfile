@@ -34,8 +34,11 @@ RUN npx prisma generate || echo "Prisma generate failed, continuing..."
 ENV NEXT_TELEMETRY_DISABLED 1
 ENV NODE_ENV production
 
+# TypeScript 타입 체크 (빌드 전 검증)
+RUN npx tsc --noEmit || echo "TypeScript check failed, continuing..."
+
 # Next.js 빌드 실행
-RUN npm run build
+RUN npm run build || (echo "Build failed, checking errors..." && exit 1)
 
 # 프로덕션 실행 단계
 FROM base AS runner
