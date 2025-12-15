@@ -2724,9 +2724,18 @@ export async function GET(request: NextRequest) {
         howto: "노하우/스타일",
         other: "기타",
       };
+      const categoryName = categoryMap[category] || category;
+      
+      // 카테고리 필터링 (정확한 매칭 또는 부분 매칭)
       where.category = {
-        name: categoryMap[category] || category,
+        name: {
+          equals: categoryName,
+          // 또는 contains를 사용하여 유연하게 매칭
+        },
       };
+      
+      // 디버깅: 카테고리 필터 로그 (프로덕션에서는 제거)
+      // console.log(`카테고리 필터: ${category} -> ${categoryName}`);
     }
 
     // 국가 필터
