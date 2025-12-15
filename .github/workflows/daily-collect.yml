@@ -72,6 +72,29 @@ jobs:
           DATABASE_URL: ${{ secrets.DATABASE_URL }}
         run: |
           echo "🔍 Verifying database connection..."
+          echo "DATABASE_URL format check..."
+          
+          # DATABASE_URL 형식 검증
+          if [[ -z "$DATABASE_URL" ]]; then
+            echo "❌ ERROR: DATABASE_URL is not set"
+            exit 1
+          fi
+          
+          # 포트 번호 추출 및 검증
+          if echo "$DATABASE_URL" | grep -qE ":[0-9]+/"; then
+            PORT=$(echo "$DATABASE_URL" | sed -n 's/.*:\([0-9]*\)\/.*/\1/p')
+            if [[ -z "$PORT" ]] || [[ "$PORT" -lt 1 ]] || [[ "$PORT" -gt 65535 ]]; then
+              echo "❌ ERROR: Invalid port number in DATABASE_URL"
+              echo "   Port must be between 1 and 65535"
+              echo "   Current port: $PORT"
+              exit 1
+            fi
+            echo "✅ Port number validated: $PORT"
+          else
+            echo "⚠️  No port number found, using default port 5432"
+          fi
+          
+          # Prisma 연결 테스트
           npx tsx -e "
             import { PrismaClient } from '@prisma/client';
             const prisma = new PrismaClient();
@@ -82,10 +105,18 @@ jobs:
               })
               .catch((error) => {
                 console.error('❌ Database connection failed:', error.message);
+                if (error.message.includes('invalid port number')) {
+                  console.error('💡 Fix: Check DATABASE_URL port number (1-65535)');
+                  console.error('💡 Fix: Re-copy External Connection String from Render');
+                } else if (error.message.includes('connection string')) {
+                  console.error('💡 Fix: Check DATABASE_URL format: postgresql://user:password@host:port/database');
+                  console.error('💡 Fix: Special characters may need URL encoding');
+                }
                 process.exit(1);
               });
           " || {
             echo "❌ ERROR: Database connection failed"
+            echo "💡 Check DATABASE_URL format in GitHub Secrets"
             exit 1
           }
         
