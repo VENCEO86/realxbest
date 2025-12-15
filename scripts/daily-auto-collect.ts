@@ -596,37 +596,74 @@ async function collectChannelsForCountryCategory(
   // 국가별 언어 코드 가져오기 (NoxInfluencer 방식)
   const languageCode = COUNTRY_LANGUAGE_CODES[countryCode] || "en";
   
-  for (const keyword of category.keywords.slice(0, 10)) { // 키워드 5개 -> 10개로 증가
-    const queries = [
+  // NoxInfluencer 스타일 검색 쿼리 생성 함수
+  const generateNoxStyleQueries = (keyword: string): string[] => {
+    return [
+      // 기본 검색
       `${countryName} ${keyword}`,
       `${keyword} ${countryName}`,
-      `top ${countryName} ${keyword}`,
-      `best ${countryName} ${keyword}`,
-      `popular ${countryName} ${keyword}`,
+      // 인기 채널 검색 (NoxInfluencer 스타일)
+      `top ${countryName} ${keyword} youtubers`,
+      `best ${countryName} ${keyword} channels`,
+      `popular ${countryName} ${keyword} creators`,
+      `famous ${countryName} ${keyword} youtubers`,
+      // 구독자/조회수 기준 검색
+      `most subscribed ${countryName} ${keyword}`,
+      `highest subscribers ${countryName} ${keyword}`,
+      `most viewed ${countryName} ${keyword}`,
+      `highest views ${countryName} ${keyword}`,
+      // 트렌딩 검색
+      `trending ${countryName} ${keyword}`,
+      `viral ${countryName} ${keyword}`,
     ];
+  };
+  
+  // 다양한 정렬 기준으로 검색 (NoxInfluencer 방식)
+  const orders: Array<"viewCount" | "rating" | "relevance" | "date"> = [
+    "viewCount",  // 조회수 기준 (인기 채널 우선)
+    "rating",     // 평점 기준
+    "relevance",  // 관련성 기준
+  ];
+  
+  for (const keyword of category.keywords.slice(0, 10)) {
+    const queries = generateNoxStyleQueries(keyword);
     
     // 현지어 키워드 추가
-    for (const localKeyword of localKeywords.slice(0, 3)) { // 상위 3개 현지어 키워드만 사용
+    for (const localKeyword of localKeywords.slice(0, 3)) {
       queries.push(
         `${localKeyword}`,
         `${localKeyword} ${countryName}`,
-        `${countryName} ${localKeyword}`
+        `${countryName} ${localKeyword}`,
+        `top ${countryName} ${localKeyword}`
       );
     }
     
-    for (const query of queries) {
+    // 각 정렬 기준으로 검색 (NoxInfluencer 방식)
+    for (const order of orders) {
       if (allChannelIds.size >= maxSearchResults) break;
       
-      // 언어 코드와 지역 코드 모두 전달 (NoxInfluencer 방식)
-      const channels = await searchChannels(query, 50, countryCode, languageCode);
-      for (const ch of channels) {
-        if (ch.channelId) {
-          allChannelIds.add(ch.channelId);
+      for (const query of queries.slice(0, 12)) { // 상위 12개 쿼리 사용
+        if (allChannelIds.size >= maxSearchResults) break;
+        
+        const channels = await searchChannels(
+          query,
+          50,
+          countryCode,
+          languageCode,
+          order // 정렬 기준 전달
+        );
+        
+        for (const ch of channels) {
+          if (ch.channelId) {
+            allChannelIds.add(ch.channelId);
+          }
         }
+        
+        // Rate limiting (API 할당량 보호)
+        await new Promise(resolve => setTimeout(resolve, 200));
       }
       
-      // Rate limiting (API 할당량 보호)
-      await new Promise(resolve => setTimeout(resolve, 200));
+      if (allChannelIds.size >= maxSearchResults) break;
     }
     
     if (allChannelIds.size >= maxSearchResults) break;
