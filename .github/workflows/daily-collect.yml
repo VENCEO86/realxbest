@@ -124,6 +124,15 @@ jobs:
         env:
           DATABASE_URL: ${{ secrets.DATABASE_URL }}
         run: |
+          # 포트 번호가 없으면 자동으로 추가
+          if ! echo "$DATABASE_URL" | grep -qE ":[0-9]+/"; then
+            if echo "$DATABASE_URL" | grep -qE "postgresql://[^@]+@[^/]+/"; then
+              export DATABASE_URL=$(echo "$DATABASE_URL" | sed 's|\(postgresql://[^@]\+@[^/]\+\)/|\1:5432/|')
+            elif echo "$DATABASE_URL" | grep -qE "postgres://[^@]+@[^/]+/"; then
+              export DATABASE_URL=$(echo "$DATABASE_URL" | sed 's|\(postgres://[^@]\+@[^/]\+\)/|\1:5432/|')
+            fi
+          fi
+          
           echo "🗄️ Setting up database..."
           echo "📋 Step 1: Pushing Prisma schema to database..."
           npx prisma db push --accept-data-loss || {
