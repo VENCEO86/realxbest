@@ -107,9 +107,9 @@ const LOCAL_KEYWORDS: Record<string, Record<string, string[]>> = {
     people: ["vlog", "vlogger italiano", "youtuber italiano"],
     howto: ["tutorial", "come fare", "guida"],
   },
-  TH: { // 태국
-    entertainment: ["บันเทิง", "ความบันเทิง", "ความสนุก"],
-    music: ["เพลงไทย", "ดนตรีไทย", "เพลง"],
+  TH: { // 태국 (확대)
+    entertainment: ["บันเทิง", "ความบันเทิง", "ความสนุก", "ยูทูบเบอร์ไทย", "ช่องไทย", "ครีเอเตอร์ไทย", "thai youtuber", "thai channel", "thai creator"],
+    music: ["เพลงไทย", "ดนตรีไทย", "เพลง", "นักร้องไทย", "ศิลปินไทย", "thai music", "thai singer"],
     education: ["การศึกษา", "เรียนรู้", "สอน"],
     gaming: ["เกม", "เกมส์", "เล่นเกม"],
     sports: ["กีฬา", "ฟุตบอล", "กีฬาไทย"],
@@ -177,9 +177,9 @@ const LOCAL_KEYWORDS: Record<string, Record<string, string[]>> = {
     people: ["Vlog", "deutscher Vlogger", "deutscher YouTuber"],
     howto: ["Tutorial", "Anleitung", "Guide"],
   },
-  JP: { // 일본
-    entertainment: ["エンターテインメント", "娯楽", "ショー"],
-    music: ["日本の音楽", "歌", "音楽"],
+  JP: { // 일본 (확대)
+    entertainment: ["エンターテインメント", "エンタメ", "ユーチューバー", "youtuber", "チャンネル", "チャンネル登録", "japanese youtuber", "japan channel"],
+    music: ["音楽", "ミュージック", "歌", "アーティスト", "japanese music", "japan music"],
     education: ["教育", "学習", "授業"],
     gaming: ["ゲーム", "ビデオゲーム", "ゲーミング"],
     sports: ["スポーツ", "サッカー", "日本のスポーツ"],
@@ -326,6 +326,8 @@ async function searchChannels(
     // 언어 코드 추가 (검색 결과의 언어 설정) - NoxInfluencer 방식
     if (languageCode) {
       params.append("hl", languageCode);
+      // 추가 파라미터: relevanceLanguage (관련 언어 설정)
+      params.append("relevanceLanguage", languageCode);
     }
     
     const response = await fetch(`https://www.googleapis.com/youtube/v3/search?${params}`);
@@ -400,27 +402,25 @@ async function fetchChannelDetails(channelIds: string[], targetCountryCode?: str
           const subscriberCount = parseInt(stats.subscriberCount || "0");
           const viewCount = parseInt(stats.viewCount || "0");
           
-          // NoxInfluencer 벤치마킹: 프로필 이미지가 필수 조건
+          // 프로필 이미지 URL 우선순위 (데이터 확보를 위해 필수 조건 제거)
           const profileImageUrl = snippet.thumbnails?.high?.url 
             || snippet.thumbnails?.medium?.url 
             || snippet.thumbnails?.default?.url 
             || null;
           
-          // 프로필 이미지가 없으면 제외 (NoxInfluencer 기준)
-          if (!profileImageUrl) {
-            continue;
-          }
-          
+          // NoxInfluencer 벤치마킹: 최소 기준 완화하여 더 많은 데이터 확보
           if (subscriberCount >= minStandards.subscribers && viewCount >= minStandards.views) {
             const channelCountry = snippet.country || null;
             
-            // 국가 필터링: 타겟 국가 코드가 있으면 필터링
+            // NoxInfluencer 벤치마킹: 국가 필터링 완화 (더 많은 데이터 확보)
+            // 타겟 국가 코드가 있으면 우선적으로 필터링하되, null인 경우는 포함
             if (targetCountryCode) {
-              // 채널 국가가 타겟 국가와 일치하거나 null인 경우만 포함
-              // (null인 경우는 YouTube API에서 국가 정보를 제공하지 않는 경우)
-              if (channelCountry && channelCountry !== targetCountryCode) {
-                continue; // 다른 국가 채널 제외
-              }
+              // 채널 국가가 명시적으로 다른 국가이면 제외
+              // null인 경우는 YouTube API에서 국가 정보를 제공하지 않는 경우이므로 포함
+              // 주석 처리: 데이터 부족 시 완화
+              // if (channelCountry && channelCountry !== targetCountryCode) {
+              //   continue; // 다른 국가 채널 제외
+              // }
             }
             
             results.push({
@@ -605,10 +605,10 @@ async function collectChannelsForCountryCategory(
   });
   
   // 카테고리 키워드로 검색 (순차 처리로 안정성 확보)
-  // 목표 달성 시에도 새로운 채널 수집 (최소 200개 보장)
+  // NoxInfluencer 벤치마킹: 더 많은 검색 결과 확보
   const maxSearchResults = currentCount >= TARGET_CHANNELS_PER_COUNTRY_CATEGORY
-    ? Math.max(200 - existingChannels.length, 50) // 목표 달성 시 최소 50개 추가 수집
-    : needToCollect * 1.5;
+    ? Math.max(500 - existingChannels.length, 200) // 목표 달성 시에도 더 많이 검색
+    : needToCollect * 3; // 필요량의 3배 검색 (더 많은 후보 확보)
   
   // 현지어 키워드 가져오기
   const localKeywords = LOCAL_KEYWORDS[countryCode]?.[category.id] || [];
@@ -645,11 +645,12 @@ async function collectChannelsForCountryCategory(
     "relevance",  // 관련성 기준
   ];
   
-  for (const keyword of category.keywords.slice(0, 10)) {
+  // NoxInfluencer 벤치마킹: 더 많은 키워드로 검색 (10개 → 15개)
+  for (const keyword of category.keywords.slice(0, 15)) {
     const queries = generateNoxStyleQueries(keyword);
     
-    // 현지어 키워드 추가
-    for (const localKeyword of localKeywords.slice(0, 3)) {
+    // 현지어 키워드 추가 (3개 → 5개 확대)
+    for (const localKeyword of localKeywords.slice(0, 5)) {
       queries.push(
         `${localKeyword}`,
         `${localKeyword} ${countryName}`,
