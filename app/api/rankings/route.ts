@@ -2698,16 +2698,15 @@ export async function GET(request: NextRequest) {
     // 카테고리 필터
     const where: any = {};
     
-    // NoxInfluencer 벤치마킹: 프로필 이미지가 필수 조건
-    // 프로필 이미지가 있는 채널만 표시
-    where.profileImageUrl = { not: null };
+    // 기본 데이터 품질 필터 (데이터 부족 시 완화)
+    // 1. 최소 구독자 수 (데이터 확보를 위해 100명 이상으로 완화)
+    where.subscriberCount = { gte: BigInt(100) };
     
-    // 기본 데이터 품질 필터 (NoxInfluencer 기준)
-    // 1. 최소 구독자 수 (NoxInfluencer는 인기 채널 위주이므로 1천명 이상)
-    where.subscriberCount = { gte: BigInt(1000) };
+    // 2. 최소 조회수 (데이터 확보를 위해 1천 조회수 이상으로 완화)
+    where.totalViewCount = { gte: BigInt(1000) };
     
-    // 2. 최소 조회수 (NoxInfluencer 기준: 1만 조회수 이상)
-    where.totalViewCount = { gte: BigInt(10000) };
+    // 프로필 이미지는 필터링하지 않음 (데이터 부족 시 완화)
+    // 대신 애플리케이션 레벨에서 필터링
     
     // 3. YouTube 공식 채널 제외 (채널명에 "youtube" 포함 제외)
     // Prisma에서는 복잡한 문자열 필터가 제한적이므로, 
