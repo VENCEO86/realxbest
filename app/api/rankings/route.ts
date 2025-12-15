@@ -2843,19 +2843,18 @@ export async function GET(request: NextRequest) {
       prisma.youTubeChannel.count({ where }),
     ]);
 
-    // YouTube 공식 채널 필터링 (애플리케이션 레벨)
-    const officialChannelKeywords = [
+    // YouTube 공식 채널 필터링 (애플리케이션 레벨) - 성능 최적화: Set 사용
+    const officialChannelKeywords = new Set([
       "youtube movies", "youtube music", "youtube kids", "youtube gaming",
       "youtube tv", "youtube originals", "youtube creators", "youtube official",
       "youtube spotlight", "youtube trends", "youtube news"
-    ];
+    ]);
     
     const filteredChannels = channels.filter((channel: any) => {
-      const channelNameLower = channel.channelName.toLowerCase();
-      const isOfficialChannel = officialChannelKeywords.some(keyword => 
+      const channelNameLower = channel.channelName?.toLowerCase() || "";
+      return !Array.from(officialChannelKeywords).some(keyword => 
         channelNameLower.includes(keyword)
       );
-      return !isOfficialChannel;
     });
 
     // BigInt를 Number로 변환 및 필드명 매핑
