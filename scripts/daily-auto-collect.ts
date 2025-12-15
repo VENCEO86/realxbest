@@ -616,7 +616,7 @@ async function collectChannelsForCountryCategory(
   // 국가별 언어 코드 가져오기 (NoxInfluencer 방식)
   const languageCode = COUNTRY_LANGUAGE_CODES[countryCode] || "en";
   
-  // NoxInfluencer 스타일 검색 쿼리 생성 함수
+  // NoxInfluencer 스타일 검색 쿼리 생성 함수 (확대)
   const generateNoxStyleQueries = (keyword: string): string[] => {
     return [
       // 기본 검색
@@ -635,6 +635,12 @@ async function collectChannelsForCountryCategory(
       // 트렌딩 검색
       `trending ${countryName} ${keyword}`,
       `viral ${countryName} ${keyword}`,
+      // 추가 검색 쿼리 (NoxInfluencer 벤치마킹)
+      `${countryName} ${keyword} youtuber`,
+      `${countryName} ${keyword} channel`,
+      `${countryName} ${keyword} creator`,
+      `best ${keyword} ${countryName} youtuber`,
+      `top ${keyword} ${countryName} channel`,
     ];
   };
   
@@ -663,7 +669,7 @@ async function collectChannelsForCountryCategory(
     for (const order of orders) {
       if (allChannelIds.size >= maxSearchResults) break;
       
-      for (const query of queries.slice(0, 12)) { // 상위 12개 쿼리 사용
+      for (const query of queries.slice(0, 17)) { // 상위 17개 쿼리 사용 (12개 → 17개 확대)
         if (allChannelIds.size >= maxSearchResults) break;
         
         const channels = await searchChannels(
@@ -680,8 +686,30 @@ async function collectChannelsForCountryCategory(
           }
         }
         
-        // Rate limiting (API 할당량 보호)
-        await new Promise(resolve => setTimeout(resolve, 200));
+        // Rate limiting (API 할당량 보호) - 200ms → 150ms로 단축
+        await new Promise(resolve => setTimeout(resolve, 150));
+      }
+      
+      // 추가 검색: 국가 코드만으로도 검색 (NoxInfluencer 방식)
+      if (allChannelIds.size < maxSearchResults) {
+        const countryOnlyQueries = [
+          `${countryName} youtuber`,
+          `${countryName} channel`,
+          `${countryName} creator`,
+          `top ${countryName}`,
+          `best ${countryName}`,
+        ];
+        
+        for (const query of countryOnlyQueries) {
+          if (allChannelIds.size >= maxSearchResults) break;
+          const channels = await searchChannels(query, 50, countryCode, languageCode, "viewCount");
+          for (const ch of channels) {
+            if (ch.channelId) {
+              allChannelIds.add(ch.channelId);
+            }
+          }
+          await new Promise(resolve => setTimeout(resolve, 150));
+        }
       }
       
       if (allChannelIds.size >= maxSearchResults) break;
