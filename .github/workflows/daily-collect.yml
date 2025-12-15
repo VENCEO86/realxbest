@@ -23,17 +23,15 @@ jobs:
           cache: 'npm'
       
       - name: Verify environment variables
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+          YOUTUBE_API_KEYS: ${{ secrets.YOUTUBE_API_KEYS }}
         run: |
           echo "🔍 Verifying environment variables..."
-          if [ -z "${{ secrets.DATABASE_URL }}" ]; then
-            echo "❌ ERROR: DATABASE_URL is not set in GitHub Secrets"
+          npx tsx scripts/test-github-secrets.ts || {
+            echo "❌ ERROR: Environment variables validation failed"
             exit 1
-          fi
-          if [ -z "${{ secrets.YOUTUBE_API_KEYS }}" ]; then
-            echo "❌ ERROR: YOUTUBE_API_KEYS is not set in GitHub Secrets"
-            exit 1
-          fi
-          echo "✅ Environment variables verified"
+          }
         
       - name: Install dependencies
         run: |
