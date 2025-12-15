@@ -80,8 +80,11 @@ jobs:
             exit 1
           fi
           
-          # 포트 번호 추출 및 검증
+          # 포트 번호가 없으면 자동으로 추가
+          FIXED_DATABASE_URL="$DATABASE_URL"
+          
           if echo "$DATABASE_URL" | grep -qE ":[0-9]+/"; then
+            # 포트 번호가 있는 경우 검증
             PORT=$(echo "$DATABASE_URL" | sed -n 's/.*:\([0-9]*\)\/.*/\1/p')
             if [[ -z "$PORT" ]] || [[ "$PORT" -lt 1 ]] || [[ "$PORT" -gt 65535 ]]; then
               echo "❌ ERROR: Invalid port number in DATABASE_URL"
@@ -91,8 +94,23 @@ jobs:
             fi
             echo "✅ Port number validated: $PORT"
           else
-            echo "⚠️  No port number found, using default port 5432"
+            # 포트 번호가 없는 경우 자동 추가
+            echo "⚠️  No port number found, adding default port 5432"
+            if echo "$DATABASE_URL" | grep -qE "postgresql://[^@]+@[^/]+/"; then
+              FIXED_DATABASE_URL=$(echo "$DATABASE_URL" | sed 's|\(postgresql://[^@]\+@[^/]\+\)/|\1:5432/|')
+              echo "✅ Fixed DATABASE_URL: ${FIXED_DATABASE_URL:0:60}..."
+            elif echo "$DATABASE_URL" | grep -qE "postgres://[^@]+@[^/]+/"; then
+              FIXED_DATABASE_URL=$(echo "$DATABASE_URL" | sed 's|\(postgres://[^@]\+@[^/]\+\)/|\1:5432/|')
+              echo "✅ Fixed DATABASE_URL: ${FIXED_DATABASE_URL:0:60}..."
+            else
+              echo "❌ ERROR: Cannot parse DATABASE_URL format"
+              echo "   Expected: postgresql://user:password@host/database"
+              exit 1
+            fi
           fi
+          
+          # 수정된 DATABASE_URL로 환경 변수 설정
+          export DATABASE_URL="$FIXED_DATABASE_URL"
           
           # Prisma 연결 테스트
           npx tsx -e "
@@ -153,6 +171,15 @@ jobs:
           DATABASE_URL: ${{ secrets.DATABASE_URL }}
           YOUTUBE_API_KEYS: ${{ secrets.YOUTUBE_API_KEYS }}
         run: |
+          # 포트 번호가 없으면 자동으로 추가
+          if ! echo "$DATABASE_URL" | grep -qE ":[0-9]+/"; then
+            if echo "$DATABASE_URL" | grep -qE "postgresql://[^@]+@[^/]+/"; then
+              export DATABASE_URL=$(echo "$DATABASE_URL" | sed 's|\(postgresql://[^@]\+@[^/]\+\)/|\1:5432/|')
+            elif echo "$DATABASE_URL" | grep -qE "postgres://[^@]+@[^/]+/"; then
+              export DATABASE_URL=$(echo "$DATABASE_URL" | sed 's|\(postgres://[^@]\+@[^/]\+\)/|\1:5432/|')
+            fi
+          fi
+          
           echo "🚀 Starting daily channel collection..."
           echo "YOUTUBE_API_KEYS length: ${#YOUTUBE_API_KEYS}"
           npm run collect:daily || {
