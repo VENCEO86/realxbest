@@ -245,10 +245,57 @@ function incrementApiUsage(key: string, units: number = 1) {
 /**
  * 채널 검색 (YouTube Search API)
  */
+// 국가별 언어 코드 매핑 (YouTube API hl 파라미터용)
+const COUNTRY_LANGUAGE_CODES: Record<string, string> = {
+  IT: "it", // 이탈리아어
+  TH: "th", // 태국어
+  VN: "vi", // 베트남어
+  PH: "en", // 필리핀 (영어)
+  ID: "id", // 인도네시아어
+  ES: "es", // 스페인어
+  FR: "fr", // 프랑스어
+  DE: "de", // 독일어
+  JP: "ja", // 일본어
+  CN: "zh", // 중국어
+  KR: "ko", // 한국어
+  BR: "pt", // 포르투갈어 (브라질)
+  PT: "pt", // 포르투갈어
+  RU: "ru", // 러시아어
+  TR: "tr", // 터키어
+  PL: "pl", // 폴란드어
+  NL: "nl", // 네덜란드어
+  GR: "el", // 그리스어
+  CZ: "cs", // 체코어
+  RO: "ro", // 루마니아어
+  HU: "hu", // 헝가리어
+  UA: "uk", // 우크라이나어
+  AR: "es", // 스페인어 (아르헨티나)
+  CL: "es", // 스페인어 (칠레)
+  CO: "es", // 스페인어 (콜롬비아)
+  PE: "es", // 스페인어 (페루)
+  EC: "es", // 스페인어 (에콰도르)
+  MX: "es", // 스페인어 (멕시코)
+  SA: "ar", // 아랍어 (사우디아라비아)
+  AE: "ar", // 아랍어 (아랍에미리트)
+  EG: "ar", // 아랍어 (이집트)
+  IL: "he", // 히브리어 (이스라엘)
+  IN: "hi", // 힌디어 (인도)
+  MY: "ms", // 말레이어
+  SG: "en", // 영어 (싱가포르)
+  TW: "zh-TW", // 중국어 번체 (대만)
+  HK: "zh-HK", // 중국어 번체 (홍콩)
+  AU: "en", // 영어 (호주)
+  NZ: "en", // 영어 (뉴질랜드)
+  CA: "en", // 영어 (캐나다)
+  GB: "en", // 영어 (영국)
+  US: "en", // 영어 (미국)
+};
+
 async function searchChannels(
   query: string,
   maxResults: number = 50,
-  regionCode?: string
+  regionCode?: string,
+  languageCode?: string
 ): Promise<Array<{ channelId: string; channelName: string }>> {
   const apiKey = getNextApiKey();
   incrementApiUsage(apiKey, 100); // Search API는 100 units
@@ -262,8 +309,14 @@ async function searchChannels(
       key: apiKey,
     });
     
+    // 지역 코드 추가 (검색 결과의 지역 설정)
     if (regionCode) {
       params.append("regionCode", regionCode);
+    }
+    
+    // 언어 코드 추가 (검색 결과의 언어 설정) - NoxInfluencer 방식
+    if (languageCode) {
+      params.append("hl", languageCode);
     }
     
     const response = await fetch(`https://www.googleapis.com/youtube/v3/search?${params}`);
@@ -533,6 +586,9 @@ async function collectChannelsForCountryCategory(
   // 현지어 키워드 가져오기
   const localKeywords = LOCAL_KEYWORDS[countryCode]?.[category.id] || [];
   
+  // 국가별 언어 코드 가져오기 (NoxInfluencer 방식)
+  const languageCode = COUNTRY_LANGUAGE_CODES[countryCode] || "en";
+  
   for (const keyword of category.keywords.slice(0, 10)) { // 키워드 5개 -> 10개로 증가
     const queries = [
       `${countryName} ${keyword}`,
@@ -554,7 +610,8 @@ async function collectChannelsForCountryCategory(
     for (const query of queries) {
       if (allChannelIds.size >= maxSearchResults) break;
       
-      const channels = await searchChannels(query, 50, countryCode);
+      // 언어 코드와 지역 코드 모두 전달 (NoxInfluencer 방식)
+      const channels = await searchChannels(query, 50, countryCode, languageCode);
       for (const ch of channels) {
         if (ch.channelId) {
           allChannelIds.add(ch.channelId);
@@ -603,8 +660,16 @@ async function main() {
   console.log("🚀 데일리 자동 채널 수집 시작...\n");
   console.log(`📊 목표: 국가별/카테고리별 최소 ${TARGET_CHANNELS_PER_COUNTRY_CATEGORY}개\n`);
   
+  // 환경 변수 확인 (GitHub Actions 실패 방지)
   if (YOUTUBE_API_KEYS.length === 0) {
     console.error("❌ YouTube API 키가 설정되지 않았습니다.");
+    console.error("   환경 변수 확인: YOUTUBE_API_KEYS 또는 YOUTUBE_API_KEY");
+    process.exit(1);
+  }
+  
+  if (!process.env.DATABASE_URL) {
+    console.error("❌ DATABASE_URL이 설정되지 않았습니다.");
+    console.error("   GitHub Secrets에 DATABASE_URL이 설정되어 있는지 확인하세요.");
     process.exit(1);
   }
   
