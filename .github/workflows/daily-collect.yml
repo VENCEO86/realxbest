@@ -94,8 +94,16 @@ jobs:
           DATABASE_URL: ${{ secrets.DATABASE_URL }}
         run: |
           echo "🗄️ Setting up database..."
+          echo "📋 Step 1: Pushing Prisma schema to database..."
+          npx prisma db push --accept-data-loss || {
+            echo "❌ ERROR: Failed to push Prisma schema"
+            exit 1
+          }
+          echo "✅ Prisma schema pushed"
+          echo "📋 Step 2: Running database setup script..."
           npm run db:setup || {
             echo "❌ ERROR: Database setup failed"
+            echo "⚠️ This might be due to existing data or schema issues"
             exit 1
           }
           echo "✅ Database setup completed"
