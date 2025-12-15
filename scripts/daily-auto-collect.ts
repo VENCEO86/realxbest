@@ -513,13 +513,20 @@ async function saveChannel(
       return false; // 새로 저장한 것이 아님
     }
     
+    // 프로필 이미지 URL 검증 및 처리
+    let profileImageUrl = channelData.profileImageUrl;
+    if (!profileImageUrl || profileImageUrl.trim() === "") {
+      // 프로필 이미지가 없으면 기본 이미지 사용하지 않고 null로 저장
+      profileImageUrl = null;
+    }
+    
     // 새 채널 저장
     await prisma.youTubeChannel.create({
       data: {
         channelId: channelData.channelId,
         channelName: channelData.channelName,
         handle: channelData.handle,
-        profileImageUrl: channelData.profileImageUrl,
+        profileImageUrl: profileImageUrl, // 검증된 프로필 이미지 URL
         categoryId,
         subscriberCount: BigInt(channelData.subscriberCount),
         totalViewCount: BigInt(channelData.totalViewCount),

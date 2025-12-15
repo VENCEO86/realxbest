@@ -61,9 +61,10 @@ export async function GET(request: NextRequest) {
     const period = searchParams.get("period") || "weekly";
     const page = parseInt(searchParams.get("page") || "1");
     
-    // limit 설정: 페이지네이션을 위해 200개씩 고정
+    // limit 설정: 페이지네이션을 위해 200개씩 고정 (데이터 부족 시 조정)
     const requestedLimit = parseInt(searchParams.get("limit") || "200");
-    const limit = Math.min(Math.max(requestedLimit, 200), 500); // 최소 200개, 최대 500개
+    // 데이터가 적을 수 있으므로 최소값 완화 (100개 이상이면 200개, 아니면 가능한 만큼)
+    const limit = Math.min(Math.max(requestedLimit, 100), 500); // 최소 100개, 최대 500개
     const skip = (page - 1) * limit;
 
     // 실제 YouTube API 데이터 가져오기 (데이터베이스가 없을 때)
@@ -2697,12 +2698,12 @@ export async function GET(request: NextRequest) {
     // 카테고리 필터
     const where: any = {};
     
-    // 기본 데이터 품질 필터 (잘못된 데이터 제외)
-    // 1. 최소 구독자 수 (1천명 이상)
-    where.subscriberCount = { gte: BigInt(1000) };
+    // 기본 데이터 품질 필터 (데이터 부족 시 완화)
+    // 1. 최소 구독자 수 (100명 이상으로 완화하여 더 많은 데이터 확보)
+    where.subscriberCount = { gte: BigInt(100) };
     
-    // 2. 최소 조회수 (1만 조회수 이상)
-    where.totalViewCount = { gte: BigInt(10000) };
+    // 2. 최소 조회수 (1천 조회수 이상으로 완화)
+    where.totalViewCount = { gte: BigInt(1000) };
     
     // 3. YouTube 공식 채널 제외 (채널명에 "youtube" 포함 제외)
     // Prisma에서는 복잡한 문자열 필터가 제한적이므로, 
@@ -2844,18 +2845,24 @@ export async function GET(request: NextRequest) {
     ]);
 
     // YouTube 공식 채널 필터링 (애플리케이션 레벨) - 성능 최적화: Set 사용
+    // 데이터 부족 시 필터링 완화
     const officialChannelKeywords = new Set([
       "youtube movies", "youtube music", "youtube kids", "youtube gaming",
       "youtube tv", "youtube originals", "youtube creators", "youtube official",
       "youtube spotlight", "youtube trends", "youtube news"
     ]);
     
-    const filteredChannels = channels.filter((channel: any) => {
-      const channelNameLower = channel.channelName?.toLowerCase() || "";
-      return !Array.from(officialChannelKeywords).some(keyword => 
-        channelNameLower.includes(keyword)
-      );
-    });
+    // 데이터가 적으면 필터링 완화
+    const shouldFilterOfficial = channels.length > 50; // 데이터가 충분할 때만 필터링
+    
+    const filteredChannels = shouldFilterOfficial
+      ? channels.filter((channel: any) => {
+          const channelNameLower = channel.channelName?.toLowerCase() || "";
+          return !Array.from(officialChannelKeywords).some(keyword => 
+            channelNameLower.includes(keyword)
+          );
+        })
+      : channels; // 데이터가 적으면 필터링하지 않음
 
     // BigInt를 Number로 변환 및 필드명 매핑
     const formattedChannels = filteredChannels.map((channel: any, index: number) => ({

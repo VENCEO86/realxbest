@@ -79,10 +79,10 @@ export function RankingTable() {
   const category = searchParams.get("category");
   const country = searchParams.get("country");
   
-  // limit 설정: 페이지네이션을 위해 200개씩 고정
+  // limit 설정: 페이지네이션을 위해 200개씩 고정 (데이터 부족 시 조정)
   const limit = Math.min(
-    Math.max(parseInt(searchParams.get("limit") || "200"), 200),
-    500 // 최소 200개, 최대 500개
+    Math.max(parseInt(searchParams.get("limit") || "200"), 100), // 최소 100개로 완화
+    500 // 최대 500개
   );
 
   const { data, isLoading, error, isError } = useQuery({
@@ -173,25 +173,29 @@ export function RankingTable() {
                     prefetch={true}
                     className="flex items-center gap-2 sm:gap-3 hover:text-blue-600 min-w-0 cursor-pointer"
                   >
-                    {channel.profileImageUrl && (
+                    {channel.profileImageUrl ? (
                       <img
                         src={channel.profileImageUrl}
                         loading="lazy"
                         decoding="async"
-                        alt={channel.channelName}
-                        className="w-8 h-8 sm:w-10 sm:h-10 rounded-full flex-shrink-0"
+                        alt={channel.channelName || channel.name || "채널"}
+                        className="w-8 h-8 sm:w-10 sm:h-10 rounded-full flex-shrink-0 object-cover"
                         onError={(e) => {
-                          
+                          // 이미지 로드 실패 시 숨김
                           (e.target as HTMLImageElement).style.display = 'none';
                         }}
-                        onLoad={() => {
-                          
-                        }}
                       />
+                    ) : (
+                      // 프로필 이미지가 없을 때 기본 아바타 표시
+                      <div className="w-8 h-8 sm:w-10 sm:h-10 rounded-full flex-shrink-0 bg-gray-300 dark:bg-gray-600 flex items-center justify-center">
+                        <span className="text-xs text-gray-600 dark:text-gray-300">
+                          {(channel.channelName || channel.name || "?").charAt(0).toUpperCase()}
+                        </span>
+                      </div>
                     )}
                     <div className="min-w-0 flex-1">
-                      <div className="font-medium text-sm sm:text-base truncate break-words" title={channel.channelName}>
-                        {channel.channelName}
+                      <div className="font-medium text-sm sm:text-base truncate break-words" title={channel.channelName || channel.name || ""}>
+                        {channel.channelName || channel.name || "이름 없음"}
                       </div>
                       {channel.handle && (
                         <div className="text-xs sm:text-sm text-gray-500 truncate">@{channel.handle}</div>
