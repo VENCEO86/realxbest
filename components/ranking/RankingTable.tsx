@@ -170,7 +170,7 @@ export function RankingTable() {
                 </td>
                 <td className="px-2 sm:px-4 py-3 min-w-[200px]">
                   <Link
-                    href={`/channels/${channel.channelId || channel.id}`}
+                    href={`/channels/${channel.id || channel.channelId}`}
                     prefetch={true}
                     className="flex items-center gap-2 sm:gap-3 hover:text-blue-600 min-w-0 cursor-pointer"
                   >

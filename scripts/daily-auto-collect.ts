@@ -97,15 +97,52 @@ const COUNTRY_MIN_STANDARDS: Record<string, { subscribers: number; views: number
 
 // 국가별 현지어 키워드 매핑 (NoxInfluencer 벤치마킹: 확대)
 const LOCAL_KEYWORDS: Record<string, Record<string, string[]>> = {
-  IT: { // 이탈리아 (확대)
-    entertainment: ["intrattenimento", "divertimento", "spettacolo", "intrattenimento italiano", "youtuber italiani", "canali italiani", "creatori italiani", "italian youtuber", "italian channel"],
-    music: ["musica italiana", "canzoni italiane", "musica", "cantanti italiani", "artisti italiani", "italian music", "italian singer"],
-    education: ["educazione", "istruzione", "scuola"],
-    gaming: ["giochi", "videogiochi", "gaming italiano"],
-    sports: ["sport", "calcio", "sport italiano"],
-    news: ["notizie", "giornalismo", "informazione"],
-    people: ["vlog", "vlogger italiano", "youtuber italiano"],
-    howto: ["tutorial", "come fare", "guida"],
+  IT: { // 이탈리아 (대폭 확대 - 최소 200개 보장)
+    entertainment: [
+      "intrattenimento", "divertimento", "spettacolo", "intrattenimento italiano", 
+      "youtuber italiani", "canali italiani", "creatori italiani", "italian youtuber", 
+      "italian channel", "youtuber italia", "canali youtube italia", "creatori italia",
+      "comici italiani", "show italiani", "intrattenimento youtube italia",
+      "top youtuber italiani", "migliori youtuber italiani", "famosi youtuber italiani",
+      "italian entertainment", "italian comedy", "italian vlog", "italian lifestyle"
+    ],
+    music: [
+      "musica italiana", "canzoni italiane", "musica", "cantanti italiani", 
+      "artisti italiani", "italian music", "italian singer", "cantanti italia",
+      "musica pop italiana", "rap italiano", "trap italiano", "rock italiano",
+      "top musica italiana", "hit italiane", "canzoni italiane 2024",
+      "italian artists", "italian musicians", "italian bands"
+    ],
+    education: [
+      "educazione", "istruzione", "scuola", "scuola italiana", "università italiana",
+      "lezioni italiane", "corsi italiani", "tutorial italiano", "insegnamento italiano",
+      "italian education", "italian learning", "italian courses"
+    ],
+    gaming: [
+      "giochi", "videogiochi", "gaming italiano", "gamer italiani", "streamer italiani",
+      "youtuber gaming italiani", "videogiochi italia", "gaming italia",
+      "italian gaming", "italian gamers", "italian streamers", "italian esports"
+    ],
+    sports: [
+      "sport", "calcio", "sport italiano", "calcio italiano", "serie a",
+      "sport italia", "calciatori italiani", "squadre italiane", "sportivi italiani",
+      "italian sports", "italian football", "italian soccer", "italian athletes"
+    ],
+    news: [
+      "notizie", "giornalismo", "informazione", "notizie italiane", "giornali italiani",
+      "telegiornali italiani", "informazione italia", "attualità italiana",
+      "italian news", "italian journalism", "italian media"
+    ],
+    people: [
+      "vlog", "vlogger italiano", "youtuber italiano", "vlogger italiani",
+      "vlog italia", "youtuber italia", "creatori italiani", "influencer italiani",
+      "italian vlog", "italian vlogger", "italian influencers", "italian creators"
+    ],
+    howto: [
+      "tutorial", "come fare", "guida", "tutorial italiano", "guide italiane",
+      "come fare italiano", "istruzioni italiane", "consigli italiani",
+      "italian tutorial", "italian guides", "italian tips", "italian diy"
+    ],
   },
   TH: { // 태국 (확대)
     entertainment: ["บันเทิง", "ความบันเทิง", "ความสนุก", "ยูทูบเบอร์ไทย", "ช่องไทย", "ครีเอเตอร์ไทย", "thai youtuber", "thai channel", "thai creator"],
@@ -409,12 +446,22 @@ async function fetchChannelDetails(channelIds: string[], targetCountryCode?: str
             || null;
           
           // NoxInfluencer 벤치마킹: 최소 기준 완화하여 더 많은 데이터 확보
-          if (subscriberCount >= minStandards.subscribers && viewCount >= minStandards.views) {
+          // 데이터 부족 국가(이탈리아 등)는 더 완화된 기준 적용
+          const isDataScarceCountry = targetCountryCode === "IT";
+          const effectiveMinSubscribers = isDataScarceCountry 
+            ? Math.max(minStandards.subscribers, 50) // 이탈리아는 50명 이상으로 완화
+            : minStandards.subscribers;
+          const effectiveMinViews = isDataScarceCountry
+            ? Math.max(minStandards.views, 500) // 이탈리아는 500 조회수 이상으로 완화
+            : minStandards.views;
+          
+          if (subscriberCount >= effectiveMinSubscribers && viewCount >= effectiveMinViews) {
             const channelCountry = snippet.country || null;
             
             // NoxInfluencer 벤치마킹: 국가 필터링 완화 (더 많은 데이터 확보)
             // 타겟 국가 코드가 있으면 우선적으로 필터링하되, null인 경우는 포함
-            if (targetCountryCode) {
+            // 데이터 부족 국가는 국가 필터링을 더 완화
+            if (targetCountryCode && !isDataScarceCountry) {
               // 채널 국가가 명시적으로 다른 국가이면 제외
               // null인 경우는 YouTube API에서 국가 정보를 제공하지 않는 경우이므로 포함
               // 주석 처리: 데이터 부족 시 완화
@@ -606,9 +653,12 @@ async function collectChannelsForCountryCategory(
   
   // 카테고리 키워드로 검색 (순차 처리로 안정성 확보)
   // NoxInfluencer 벤치마킹: 더 많은 검색 결과 확보
+  // 데이터 부족 국가(이탈리아 등)는 더 많이 검색
   const maxSearchResults = currentCount >= TARGET_CHANNELS_PER_COUNTRY_CATEGORY
     ? Math.max(500 - existingChannels.length, 200) // 목표 달성 시에도 더 많이 검색
-    : needToCollect * 3; // 필요량의 3배 검색 (더 많은 후보 확보)
+    : (countryCode === "IT" || currentCount < MIN_REQUIRED_CHANNELS)
+      ? needToCollect * 5 // 데이터 부족 국가는 5배 검색 (이탈리아 등)
+      : needToCollect * 3; // 필요량의 3배 검색 (더 많은 후보 확보)
   
   // 현지어 키워드 가져오기
   const localKeywords = LOCAL_KEYWORDS[countryCode]?.[category.id] || [];
@@ -616,9 +666,9 @@ async function collectChannelsForCountryCategory(
   // 국가별 언어 코드 가져오기 (NoxInfluencer 방식)
   const languageCode = COUNTRY_LANGUAGE_CODES[countryCode] || "en";
   
-  // NoxInfluencer 스타일 검색 쿼리 생성 함수 (확대)
+  // NoxInfluencer 스타일 검색 쿼리 생성 함수 (대폭 확대 - 이탈리아 등 데이터 부족 국가 대응)
   const generateNoxStyleQueries = (keyword: string): string[] => {
-    return [
+    const queries = [
       // 기본 검색
       `${countryName} ${keyword}`,
       `${keyword} ${countryName}`,
@@ -642,6 +692,29 @@ async function collectChannelsForCountryCategory(
       `best ${keyword} ${countryName} youtuber`,
       `top ${keyword} ${countryName} channel`,
     ];
+
+    // 데이터 부족 국가(이탈리아 등)를 위한 추가 검색 쿼리
+    if (countryCode === "IT" || currentCount < MIN_REQUIRED_CHANNELS) {
+      queries.push(
+        // 더 다양한 검색 패턴
+        `${keyword} ${countryName} youtube`,
+        `${countryName} ${keyword} content`,
+        `${countryName} ${keyword} videos`,
+        `italian ${keyword} youtuber`, // 이탈리아 특화
+        `italian ${keyword} channel`, // 이탈리아 특화
+        `italy ${keyword} youtuber`, // 이탈리아 특화
+        `italy ${keyword} channel`, // 이탈리아 특화
+        // 숫자 기반 검색 (인기 채널 찾기)
+        `top 100 ${countryName} ${keyword}`,
+        `top 50 ${countryName} ${keyword}`,
+        `best 100 ${countryName} ${keyword}`,
+        // 연도별 검색
+        `${countryName} ${keyword} 2024`,
+        `${countryName} ${keyword} 2023`,
+      );
+    }
+
+    return queries;
   };
   
   // 다양한 정렬 기준으로 검색 (NoxInfluencer 방식)
@@ -651,17 +724,27 @@ async function collectChannelsForCountryCategory(
     "relevance",  // 관련성 기준
   ];
   
-  // NoxInfluencer 벤치마킹: 더 많은 키워드로 검색 (10개 → 15개)
-  for (const keyword of category.keywords.slice(0, 15)) {
+  // NoxInfluencer 벤치마킹: 더 많은 키워드로 검색 (15개 → 20개로 확대, 데이터 부족 국가는 더 많이)
+  const keywordLimit = (countryCode === "IT" || currentCount < MIN_REQUIRED_CHANNELS) ? 20 : 15;
+  for (const keyword of category.keywords.slice(0, keywordLimit)) {
     const queries = generateNoxStyleQueries(keyword);
     
-    // 현지어 키워드 추가 (3개 → 5개 확대)
-    for (const localKeyword of localKeywords.slice(0, 5)) {
+    // 현지어 키워드 추가 (5개 → 10개로 확대, 데이터 부족 국가는 더 많이)
+    const localKeywordLimit = (countryCode === "IT" || currentCount < MIN_REQUIRED_CHANNELS) ? 10 : 5;
+    for (const localKeyword of localKeywords.slice(0, localKeywordLimit)) {
       queries.push(
         `${localKeyword}`,
         `${localKeyword} ${countryName}`,
         `${countryName} ${localKeyword}`,
-        `top ${countryName} ${localKeyword}`
+        `top ${countryName} ${localKeyword}`,
+        `best ${countryName} ${localKeyword}`,
+        `popular ${localKeyword} ${countryName}`,
+        // 이탈리아 특화
+        ...(countryCode === "IT" ? [
+          `italian ${localKeyword}`,
+          `italy ${localKeyword}`,
+          `italiano ${localKeyword}`,
+        ] : [])
       );
     }
     
@@ -669,7 +752,9 @@ async function collectChannelsForCountryCategory(
     for (const order of orders) {
       if (allChannelIds.size >= maxSearchResults) break;
       
-      for (const query of queries.slice(0, 17)) { // 상위 17개 쿼리 사용 (12개 → 17개 확대)
+      // 데이터 부족 국가는 더 많은 쿼리 사용
+      const queryLimit = (countryCode === "IT" || currentCount < MIN_REQUIRED_CHANNELS) ? 30 : 17;
+      for (const query of queries.slice(0, queryLimit)) {
         if (allChannelIds.size >= maxSearchResults) break;
         
         const channels = await searchChannels(
@@ -690,7 +775,7 @@ async function collectChannelsForCountryCategory(
         await new Promise(resolve => setTimeout(resolve, 150));
       }
       
-      // 추가 검색: 국가 코드만으로도 검색 (NoxInfluencer 방식)
+      // 추가 검색: 국가 코드만으로도 검색 (NoxInfluencer 방식, 데이터 부족 국가는 더 많이)
       if (allChannelIds.size < maxSearchResults) {
         const countryOnlyQueries = [
           `${countryName} youtuber`,
@@ -698,7 +783,31 @@ async function collectChannelsForCountryCategory(
           `${countryName} creator`,
           `top ${countryName}`,
           `best ${countryName}`,
+          `popular ${countryName}`,
+          `famous ${countryName}`,
+          `most subscribed ${countryName}`,
+          `most viewed ${countryName}`,
         ];
+
+        // 이탈리아 등 데이터 부족 국가를 위한 추가 쿼리
+        if (countryCode === "IT" || currentCount < MIN_REQUIRED_CHANNELS) {
+          countryOnlyQueries.push(
+            `italian youtuber`, // 이탈리아 특화
+            `italian channel`, // 이탈리아 특화
+            `italy youtuber`, // 이탈리아 특화
+            `italy channel`, // 이탈리아 특화
+            `youtuber italia`, // 이탈리아 특화
+            `canali italiani`, // 이탈리아 특화
+            `creatori italiani`, // 이탈리아 특화
+            `top italian youtubers`, // 이탈리아 특화
+            `best italian channels`, // 이탈리아 특화
+            `popular italian creators`, // 이탈리아 특화
+            `most subscribed italian`, // 이탈리아 특화
+            `most viewed italian`, // 이탈리아 특화
+            `trending ${countryName}`, // 트렌딩 검색
+            `viral ${countryName}`, // 바이럴 검색
+          );
+        }
         
         for (const query of countryOnlyQueries) {
           if (allChannelIds.size >= maxSearchResults) break;

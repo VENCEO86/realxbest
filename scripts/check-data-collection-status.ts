@@ -16,12 +16,12 @@ async function main() {
     console.log("✅ 데이터베이스 연결 성공\n");
 
     // 전체 채널 수 확인
-    const totalChannels = await prisma.channel.count();
+    const totalChannels = await prisma.youTubeChannel.count();
     console.log(`📊 전체 채널 수: ${totalChannels.toLocaleString()}개\n`);
 
     // 국가별 채널 수 확인
-    const channelsByCountry = await prisma.channel.groupBy({
-      by: ["countryCode"],
+    const channelsByCountry = await prisma.youTubeChannel.groupBy({
+      by: ["country"],
       _count: {
         id: true,
       },
@@ -34,12 +34,12 @@ async function main() {
 
     console.log("🌍 국가별 채널 수:");
     for (const item of channelsByCountry) {
-      console.log(`  ${item.countryCode}: ${item._count.id.toLocaleString()}개`);
+      console.log(`  ${item.country || "Unknown"}: ${item._count.id.toLocaleString()}개`);
     }
     console.log("");
 
     // 카테고리별 채널 수 확인
-    const channelsByCategory = await prisma.channel.groupBy({
+    const channelsByCategory = await prisma.youTubeChannel.groupBy({
       by: ["categoryId"],
       _count: {
         id: true,
@@ -62,14 +62,14 @@ async function main() {
     console.log("");
 
     // 국가별 + 카테고리별 채널 수 확인
-    const channelsByCountryCategory = await prisma.channel.groupBy({
-      by: ["countryCode", "categoryId"],
+    const channelsByCountryCategory = await prisma.youTubeChannel.groupBy({
+      by: ["country", "categoryId"],
       _count: {
         id: true,
       },
       orderBy: [
         {
-          countryCode: "asc",
+          country: "asc",
         },
         {
           _count: {
@@ -83,11 +83,12 @@ async function main() {
     const countryCategoryMap = new Map<string, Map<string, number>>();
 
     for (const item of channelsByCountryCategory) {
-      if (!countryCategoryMap.has(item.countryCode)) {
-        countryCategoryMap.set(item.countryCode, new Map());
+      const countryCode = item.country || "Unknown";
+      if (!countryCategoryMap.has(countryCode)) {
+        countryCategoryMap.set(countryCode, new Map());
       }
       const categoryName = categoryMap.get(item.categoryId) || "Unknown";
-      countryCategoryMap.get(item.countryCode)!.set(categoryName, item._count.id);
+      countryCategoryMap.get(countryCode)!.set(categoryName, item._count.id);
     }
 
     for (const [countryCode, categoryMap] of countryCategoryMap) {
@@ -100,23 +101,23 @@ async function main() {
     console.log("");
 
     // 최근 업데이트된 채널 확인
-    const recentChannels = await prisma.channel.findMany({
+    const recentChannels = await prisma.youTubeChannel.findMany({
       take: 10,
       orderBy: {
-        updatedAt: "desc",
+        lastUpdated: "desc",
       },
       select: {
         id: true,
-        name: true,
-        countryCode: true,
-        updatedAt: true,
+        channelName: true,
+        country: true,
+        lastUpdated: true,
       },
     });
 
     console.log("🕐 최근 업데이트된 채널 (최대 10개):");
     for (const channel of recentChannels) {
-      const timeAgo = getTimeAgo(channel.updatedAt);
-      console.log(`  - ${channel.name} (${channel.countryCode}): ${timeAgo} 전`);
+      const timeAgo = getTimeAgo(channel.lastUpdated);
+      console.log(`  - ${channel.channelName} (${channel.country || "Unknown"}): ${timeAgo} 전`);
     }
     console.log("");
 
@@ -130,7 +131,8 @@ async function main() {
       console.log(`⚠️  최소 보장 개수(${minRequired}개) 미달 항목:`);
       for (const item of belowMinimum) {
         const categoryName = categoryMap.get(item.categoryId) || "Unknown";
-        console.log(`  - ${item.countryCode} - ${categoryName}: ${item._count.id}개`);
+        const countryCode = item.country || "Unknown";
+        console.log(`  - ${countryCode} - ${categoryName}: ${item._count.id}개`);
       }
       console.log("");
     } else {
@@ -147,7 +149,8 @@ async function main() {
       console.log(`📈 목표 개수(${targetCount}개) 미달 항목:`);
       for (const item of belowTarget) {
         const categoryName = categoryMap.get(item.categoryId) || "Unknown";
-        console.log(`  - ${item.countryCode} - ${categoryName}: ${item._count.id}개`);
+        const countryCode = item.country || "Unknown";
+        console.log(`  - ${countryCode} - ${categoryName}: ${item._count.id}개`);
       }
       console.log("");
     } else {

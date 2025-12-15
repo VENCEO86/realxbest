@@ -33,18 +33,22 @@ export async function generateMetadata({
 }: {
   params: { id: string };
 }): Promise<Metadata> {
-  const channel = await getChannel(params.id);
-  if (!channel) return {};
+  try {
+    const channel = await getChannel(params.id);
+    if (!channel) return {};
 
-  return {
-    title: `${channel.channelName} - 유튜브 채널 분석`,
-    description: `${channel.channelName}의 구독자 수, 조회수, 성장 추이 분석`,
-    openGraph: {
+    return {
       title: `${channel.channelName} - 유튜브 채널 분석`,
-      description: `구독자 ${channel.subscriberCount.toLocaleString()}명, 조회수 ${channel.totalViewCount.toLocaleString()}회`,
-      images: channel.profileImageUrl ? [channel.profileImageUrl] : [],
-    },
-  };
+      description: `${channel.channelName}의 구독자 수, 조회수, 성장 추이 분석`,
+      openGraph: {
+        title: `${channel.channelName} - 유튜브 채널 분석`,
+        description: `구독자 ${channel.subscriberCount.toLocaleString()}명, 조회수 ${channel.totalViewCount.toLocaleString()}회`,
+        images: channel.profileImageUrl ? [channel.profileImageUrl] : [],
+      },
+    };
+  } catch (error) {
+    return {};
+  }
 }
 
 export default async function ChannelPage({

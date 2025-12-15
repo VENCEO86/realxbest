@@ -182,7 +182,12 @@ export async function fetchChannelVideos(
   engagementRate: number;
 }>> {
   if (!apiKey) {
-    
+    console.warn("[fetchChannelVideos] YouTube API key가 설정되지 않았습니다.");
+    return [];
+  }
+
+  if (!channelId || !channelId.startsWith("UC")) {
+    console.warn(`[fetchChannelVideos] 유효하지 않은 채널 ID: ${channelId}`);
     return [];
   }
 
@@ -193,6 +198,8 @@ export async function fetchChannelVideos(
     );
 
     if (!channelResponse.ok) {
+      const errorData = await channelResponse.json().catch(() => ({}));
+      console.error(`[fetchChannelVideos] 채널 정보 조회 실패 (${channelId}):`, channelResponse.status, errorData);
       return [];
     }
 
@@ -200,6 +207,7 @@ export async function fetchChannelVideos(
     const uploadsPlaylistId = channelData.items?.[0]?.contentDetails?.relatedPlaylists?.uploads;
 
     if (!uploadsPlaylistId) {
+      console.warn(`[fetchChannelVideos] 업로드 플레이리스트 ID를 찾을 수 없음 (${channelId})`);
       return [];
     }
 
@@ -209,6 +217,8 @@ export async function fetchChannelVideos(
     );
 
     if (!playlistResponse.ok) {
+      const errorData = await playlistResponse.json().catch(() => ({}));
+      console.error(`[fetchChannelVideos] 플레이리스트 조회 실패 (${uploadsPlaylistId}):`, playlistResponse.status, errorData);
       return [];
     }
 
@@ -225,12 +235,19 @@ export async function fetchChannelVideos(
     );
 
     if (!videosResponse.ok) {
+      const errorData = await videosResponse.json().catch(() => ({}));
+      console.error(`[fetchChannelVideos] 동영상 상세 정보 조회 실패:`, videosResponse.status, errorData);
       return [];
     }
 
     const videosData = await videosResponse.json();
 
-    return videosData.items?.map((video: any) => {
+    if (!videosData.items || videosData.items.length === 0) {
+      console.warn(`[fetchChannelVideos] 동영상이 없음 (${channelId})`);
+      return [];
+    }
+
+    return videosData.items.map((video: any) => {
       const snippet = video.snippet;
       const statistics = video.statistics;
       const viewCount = parseInt(statistics.viewCount || "0");

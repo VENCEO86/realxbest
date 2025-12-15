@@ -57,24 +57,22 @@ export function Pagination({ currentPage, totalItems, itemsPerPage }: Pagination
         <span className="font-medium text-gray-900 dark:text-white">
           {((currentPage - 1) * itemsPerPage + 1).toLocaleString()}
         </span>
-        {" - "}
+        {"-"}
         <span className="font-medium text-gray-900 dark:text-white">
           {Math.min(currentPage * itemsPerPage, totalItems).toLocaleString()}
         </span>
-        {" / 총 "}
+        {" / "}
         <span className="font-medium text-gray-900 dark:text-white">
-          {totalItems.toLocaleString()}개
+          {totalItems.toLocaleString()}
         </span>
-        {" 채널"}
-        {" (페이지 "}
+        {" · "}
         <span className="font-medium text-gray-900 dark:text-white">
           {currentPage}
         </span>
-        {" / "}
+        {"/"}
         <span className="font-medium text-gray-900 dark:text-white">
           {totalPages}
         </span>
-        {")"}
       </div>
       
       {/* 페이지네이션 버튼 */}

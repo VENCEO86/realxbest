@@ -2699,11 +2699,16 @@ export async function GET(request: NextRequest) {
     const where: any = {};
     
     // 기본 데이터 품질 필터 (데이터 부족 시 완화)
-    // 1. 최소 구독자 수 (데이터 확보를 위해 100명 이상으로 완화)
-    where.subscriberCount = { gte: BigInt(100) };
+    // 이탈리아 등 데이터 부족 국가는 더 완화된 기준 적용
+    const isDataScarceCountry = country === "IT";
+    const effectiveMinSubscribers = isDataScarceCountry ? 50 : 100; // 이탈리아: 50명 이상
+    const effectiveMinViews = isDataScarceCountry ? 500 : 1000; // 이탈리아: 500 조회수 이상
     
-    // 2. 최소 조회수 (데이터 확보를 위해 1천 조회수 이상으로 완화)
-    where.totalViewCount = { gte: BigInt(1000) };
+    // 1. 최소 구독자 수 (데이터 확보를 위해 완화)
+    where.subscriberCount = { gte: BigInt(effectiveMinSubscribers) };
+    
+    // 2. 최소 조회수 (데이터 확보를 위해 완화)
+    where.totalViewCount = { gte: BigInt(effectiveMinViews) };
     
     // 프로필 이미지는 필터링하지 않음 (데이터 부족 시 완화)
     // 대신 애플리케이션 레벨에서 필터링
@@ -2879,26 +2884,40 @@ export async function GET(request: NextRequest) {
     });
 
     // BigInt를 Number로 변환 및 필드명 매핑
-    const formattedChannels = filteredChannels.map((channel: any, index: number) => ({
-      id: channel.id,
-      channelId: channel.channelId,
-      channelName: channel.channelName || "", // name 필드도 유지하되 channelName도 포함
-      name: channel.channelName || "", // channelName -> name 매핑 (하위 호환성)
-      handle: channel.handle,
-      profileImageUrl: channel.profileImageUrl || null, // null 처리 명시
-      subscriberCount: Number(channel.subscriberCount),
-      totalViewCount: Number(channel.totalViewCount),
-      weeklyViewCount: Number(channel.weeklyViewCount || 0),
-      weeklySubscriberChangeRate: channel.weeklySubscriberChangeRate || 0,
-      weeklyViewCountChangeRate: channel.weeklyViewCountChangeRate || 0,
-      averageEngagementRate: channel.averageEngagementRate || 0,
-      currentRank: channel.currentRank || (skip + index + 1), // 순위가 없으면 계산
-      rankChange: channel.rankChange || 0,
-      lastUpdated: channel.lastUpdated || new Date(),
-      countryCode: channel.country || "", // country -> countryCode 매핑
-      categoryName: channel.category?.name || "", // category.name -> categoryName 매핑
-      category: channel.category || { name: "" }, // category 객체도 포함 (하위 호환성)
-    }));
+    const formattedChannels = filteredChannels.map((channel: any, index: number) => {
+      // 주간 조회수 계산 (데이터베이스에 없으면 총 조회수의 5%로 추정)
+      const totalViews = Number(channel.totalViewCount || 0);
+      const weeklyViewCount = Number(channel.weeklyViewCount || 0);
+      const calculatedWeeklyViewCount = weeklyViewCount > 0 
+        ? weeklyViewCount 
+        : Math.floor(totalViews * 0.05); // 총 조회수의 5%로 추정
+      
+      // 주간 조회수 변화율 계산 (데이터베이스에 없으면 기본값)
+      const weeklyViewCountChangeRate = channel.weeklyViewCountChangeRate !== undefined && channel.weeklyViewCountChangeRate !== null
+        ? channel.weeklyViewCountChangeRate
+        : 5.0; // 기본값 5%
+      
+      return {
+        id: channel.id,
+        channelId: channel.channelId,
+        channelName: channel.channelName || "", // name 필드도 유지하되 channelName도 포함
+        name: channel.channelName || "", // channelName -> name 매핑 (하위 호환성)
+        handle: channel.handle,
+        profileImageUrl: channel.profileImageUrl || null, // null 처리 명시
+        subscriberCount: Number(channel.subscriberCount),
+        totalViewCount: totalViews,
+        weeklyViewCount: calculatedWeeklyViewCount,
+        weeklySubscriberChangeRate: channel.weeklySubscriberChangeRate || 0,
+        weeklyViewCountChangeRate: weeklyViewCountChangeRate,
+        averageEngagementRate: channel.averageEngagementRate || 0,
+        currentRank: channel.currentRank || (skip + index + 1), // 순위가 없으면 계산
+        rankChange: channel.rankChange || 0,
+        lastUpdated: channel.lastUpdated || new Date(),
+        countryCode: channel.country || "", // country -> countryCode 매핑
+        categoryName: channel.category?.name || "", // category.name -> categoryName 매핑
+        category: channel.category || { name: "" }, // category 객체도 포함 (하위 호환성)
+      };
+    });
 
     const result = {
       channels: formattedChannels,
