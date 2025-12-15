@@ -22,16 +22,38 @@ jobs:
           node-version: '20'
           cache: 'npm'
       
+      - name: Verify environment variables
+        run: |
+          echo "🔍 Verifying environment variables..."
+          if [ -z "${{ secrets.DATABASE_URL }}" ]; then
+            echo "❌ ERROR: DATABASE_URL is not set in GitHub Secrets"
+            exit 1
+          fi
+          if [ -z "${{ secrets.YOUTUBE_API_KEYS }}" ]; then
+            echo "❌ ERROR: YOUTUBE_API_KEYS is not set in GitHub Secrets"
+            exit 1
+          fi
+          echo "✅ Environment variables verified"
+        
       - name: Install dependencies
         run: |
           echo "📦 Installing dependencies..."
-          npm ci --legacy-peer-deps
+          npm ci --legacy-peer-deps || {
+            echo "❌ ERROR: Failed to install dependencies"
+            exit 1
+          }
           echo "✅ Dependencies installed"
         
       - name: Verify tsx installation
         run: |
           echo "🔍 Verifying tsx installation..."
-          npx tsx --version || npm install -g tsx
+          if ! npx tsx --version; then
+            echo "⚠️ tsx not found, installing globally..."
+            npm install -g tsx || {
+              echo "❌ ERROR: Failed to install tsx"
+              exit 1
+            }
+          fi
           echo "✅ tsx verified"
         
       - name: Generate Prisma Client
@@ -39,18 +61,46 @@ jobs:
           DATABASE_URL: ${{ secrets.DATABASE_URL }}
         run: |
           echo "🔧 Generating Prisma Client..."
-          npx prisma generate
+          echo "DATABASE_URL length: ${#DATABASE_URL}"
+          npx prisma generate || {
+            echo "❌ ERROR: Failed to generate Prisma Client"
+            echo "Check DATABASE_URL format"
+            exit 1
+          }
           echo "✅ Prisma Client generated"
-        continue-on-error: false
+        
+      - name: Verify database connection
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+        run: |
+          echo "🔍 Verifying database connection..."
+          npx tsx -e "
+            import { PrismaClient } from '@prisma/client';
+            const prisma = new PrismaClient();
+            prisma.\$connect()
+              .then(() => {
+                console.log('✅ Database connection successful');
+                return prisma.\$disconnect();
+              })
+              .catch((error) => {
+                console.error('❌ Database connection failed:', error.message);
+                process.exit(1);
+              });
+          " || {
+            echo "❌ ERROR: Database connection failed"
+            exit 1
+          }
         
       - name: Setup database
         env:
           DATABASE_URL: ${{ secrets.DATABASE_URL }}
         run: |
           echo "🗄️ Setting up database..."
-          npm run db:setup
+          npm run db:setup || {
+            echo "❌ ERROR: Database setup failed"
+            exit 1
+          }
           echo "✅ Database setup completed"
-        continue-on-error: false
         
       - name: Run daily collection
         env:
@@ -58,6 +108,9 @@ jobs:
           YOUTUBE_API_KEYS: ${{ secrets.YOUTUBE_API_KEYS }}
         run: |
           echo "🚀 Starting daily channel collection..."
-          npm run collect:daily
+          echo "YOUTUBE_API_KEYS length: ${#YOUTUBE_API_KEYS}"
+          npm run collect:daily || {
+            echo "❌ ERROR: Daily collection failed"
+            exit 1
+          }
           echo "✅ Daily collection completed"
-        continue-on-error: false
