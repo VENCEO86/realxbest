@@ -28,6 +28,175 @@ const MIN_REQUIRED_CHANNELS = 100; // 최소 보장 개수 (광고 삽입을 위
 const MIN_SUBSCRIBER_COUNT = 1000;
 const MIN_VIEW_COUNT = 10000;
 
+// 국가별 최소 기준 조정 (작은 국가는 기준 완화)
+const COUNTRY_MIN_STANDARDS: Record<string, { subscribers: number; views: number }> = {
+  IT: { subscribers: 500, views: 5000 },   // 이탈리아
+  TH: { subscribers: 500, views: 5000 },   // 태국
+  VN: { subscribers: 500, views: 5000 },   // 베트남
+  PH: { subscribers: 500, views: 5000 },   // 필리핀
+  ID: { subscribers: 500, views: 5000 },   // 인도네시아
+  MY: { subscribers: 500, views: 5000 },   // 말레이시아
+  SG: { subscribers: 500, views: 5000 },   // 싱가포르
+  TW: { subscribers: 500, views: 5000 },   // 대만
+  HK: { subscribers: 500, views: 5000 },   // 홍콩
+  BD: { subscribers: 500, views: 5000 },   // 방글라데시
+  PK: { subscribers: 500, views: 5000 },   // 파키스탄
+  MM: { subscribers: 500, views: 5000 },   // 미얀마
+  KH: { subscribers: 500, views: 5000 },   // 캄보디아
+  LA: { subscribers: 500, views: 5000 },   // 라오스
+  BN: { subscribers: 500, views: 5000 },   // 브루나이
+  CL: { subscribers: 500, views: 5000 },   // 칠레
+  AR: { subscribers: 500, views: 5000 },   // 아르헨티나
+  UY: { subscribers: 500, views: 5000 },   // 우루과이
+  CO: { subscribers: 500, views: 5000 },   // 콜롬비아
+  PE: { subscribers: 500, views: 5000 },   // 페루
+  EC: { subscribers: 500, views: 5000 },   // 에콰도르
+  PY: { subscribers: 500, views: 5000 },   // 파라과이
+  BO: { subscribers: 500, views: 5000 },   // 볼리비아
+  VE: { subscribers: 500, views: 5000 },   // 베네수엘라
+  GY: { subscribers: 500, views: 5000 },   // 가이아나
+  SR: { subscribers: 500, views: 5000 },   // 수리남
+  GF: { subscribers: 500, views: 5000 },   // 프랑스령 기아나
+  FK: { subscribers: 500, views: 5000 },   // 포클랜드 제도
+  NL: { subscribers: 500, views: 5000 },   // 네덜란드
+  CH: { subscribers: 500, views: 5000 },   // 스위스
+  SE: { subscribers: 500, views: 5000 },   // 스웨덴
+  BE: { subscribers: 500, views: 5000 },   // 벨기에
+  AT: { subscribers: 500, views: 5000 },   // 오스트리아
+  IE: { subscribers: 500, views: 5000 },   // 아일랜드
+  NO: { subscribers: 500, views: 5000 },   // 노르웨이
+  DK: { subscribers: 500, views: 5000 },   // 덴마크
+  FI: { subscribers: 500, views: 5000 },   // 핀란드
+  LU: { subscribers: 500, views: 5000 },   // 룩셈부르크
+  IS: { subscribers: 500, views: 5000 },   // 아이슬란드
+  MC: { subscribers: 500, views: 5000 },   // 모나코
+  LI: { subscribers: 500, views: 5000 },   // 리히텐슈타인
+  MT: { subscribers: 500, views: 5000 },   // 몰타
+  AD: { subscribers: 500, views: 5000 },   // 안도라
+  ES: { subscribers: 500, views: 5000 },   // 스페인
+  PL: { subscribers: 500, views: 5000 },   // 폴란드
+  PT: { subscribers: 500, views: 5000 },   // 포르투갈
+  GR: { subscribers: 500, views: 5000 },   // 그리스
+  CZ: { subscribers: 500, views: 5000 },   // 체코
+  RO: { subscribers: 500, views: 5000 },   // 루마니아
+  HU: { subscribers: 500, views: 5000 },   // 헝가리
+  UA: { subscribers: 500, views: 5000 },   // 우크라이나
+  SA: { subscribers: 500, views: 5000 },   // 사우디아라비아
+  AE: { subscribers: 500, views: 5000 },   // 아랍에미리트
+  IL: { subscribers: 500, views: 5000 },   // 이스라엘
+  TR: { subscribers: 500, views: 5000 },   // 터키
+  EG: { subscribers: 500, views: 5000 },   // 이집트
+  AU: { subscribers: 500, views: 5000 },   // 호주
+  NZ: { subscribers: 500, views: 5000 },   // 뉴질랜드
+  ZA: { subscribers: 500, views: 5000 },   // 남아프리카
+  NG: { subscribers: 500, views: 5000 },   // 나이지리아
+  KE: { subscribers: 500, views: 5000 },   // 케냐
+};
+
+// 국가별 현지어 키워드 매핑
+const LOCAL_KEYWORDS: Record<string, Record<string, string[]>> = {
+  IT: { // 이탈리아
+    entertainment: ["intrattenimento", "divertimento", "spettacolo", "intrattenimento italiano"],
+    music: ["musica italiana", "canzoni italiane", "musica"],
+    education: ["educazione", "istruzione", "scuola"],
+    gaming: ["giochi", "videogiochi", "gaming italiano"],
+    sports: ["sport", "calcio", "sport italiano"],
+    news: ["notizie", "giornalismo", "informazione"],
+    people: ["vlog", "vlogger italiano", "youtuber italiano"],
+    howto: ["tutorial", "come fare", "guida"],
+  },
+  TH: { // 태국
+    entertainment: ["บันเทิง", "ความบันเทิง", "ความสนุก"],
+    music: ["เพลงไทย", "ดนตรีไทย", "เพลง"],
+    education: ["การศึกษา", "เรียนรู้", "สอน"],
+    gaming: ["เกม", "เกมส์", "เล่นเกม"],
+    sports: ["กีฬา", "ฟุตบอล", "กีฬาไทย"],
+    news: ["ข่าว", "ข่าวสาร", "ข่าวไทย"],
+    people: ["vlog", "vlogger ไทย", "youtuber ไทย"],
+    howto: ["สอน", "วิธีทำ", "เทคนิค"],
+  },
+  VN: { // 베트남
+    entertainment: ["giải trí", "vui chơi", "tiêu khiển"],
+    music: ["âm nhạc", "nhạc Việt", "bài hát"],
+    education: ["giáo dục", "học tập", "dạy học"],
+    gaming: ["trò chơi", "game", "chơi game"],
+    sports: ["thể thao", "bóng đá", "thể thao Việt"],
+    news: ["tin tức", "báo chí", "thông tin"],
+    people: ["vlog", "vlogger Việt", "youtuber Việt"],
+    howto: ["hướng dẫn", "cách làm", "mẹo"],
+  },
+  PH: { // 필리핀
+    entertainment: ["entertainment", "aliwan", "libangan"],
+    music: ["musika", "kanta", "awit"],
+    education: ["edukasyon", "aral", "turo"],
+    gaming: ["laro", "games", "video games"],
+    sports: ["sports", "palakasan", "laro"],
+    news: ["balita", "news", "ulat"],
+    people: ["vlog", "vlogger", "youtuber"],
+    howto: ["tutorial", "paano", "guide"],
+  },
+  ID: { // 인도네시아
+    entertainment: ["hiburan", "tontonan", "kesenangan"],
+    music: ["musik", "lagu", "musik Indonesia"],
+    education: ["pendidikan", "belajar", "pengajaran"],
+    gaming: ["permainan", "game", "gaming"],
+    sports: ["olahraga", "sepak bola", "olahraga Indonesia"],
+    news: ["berita", "warta", "informasi"],
+    people: ["vlog", "vlogger Indonesia", "youtuber Indonesia"],
+    howto: ["tutorial", "cara", "panduan"],
+  },
+  ES: { // 스페인
+    entertainment: ["entretenimiento", "diversión", "espectáculo"],
+    music: ["música española", "canciones", "música"],
+    education: ["educación", "aprendizaje", "enseñanza"],
+    gaming: ["juegos", "videojuegos", "gaming español"],
+    sports: ["deportes", "fútbol", "deportes españoles"],
+    news: ["noticias", "periodismo", "información"],
+    people: ["vlog", "vlogger español", "youtuber español"],
+    howto: ["tutorial", "cómo hacer", "guía"],
+  },
+  FR: { // 프랑스
+    entertainment: ["divertissement", "amusement", "spectacle"],
+    music: ["musique française", "chansons", "musique"],
+    education: ["éducation", "apprentissage", "enseignement"],
+    gaming: ["jeux", "jeux vidéo", "gaming français"],
+    sports: ["sports", "football", "sports français"],
+    news: ["actualités", "journalisme", "information"],
+    people: ["vlog", "vlogger français", "youtuber français"],
+    howto: ["tutoriel", "comment faire", "guide"],
+  },
+  DE: { // 독일
+    entertainment: ["Unterhaltung", "Vergnügen", "Show"],
+    music: ["deutsche Musik", "Lieder", "Musik"],
+    education: ["Bildung", "Lernen", "Unterricht"],
+    gaming: ["Spiele", "Videospiele", "Gaming"],
+    sports: ["Sport", "Fußball", "deutscher Sport"],
+    news: ["Nachrichten", "Journalismus", "Information"],
+    people: ["Vlog", "deutscher Vlogger", "deutscher YouTuber"],
+    howto: ["Tutorial", "Anleitung", "Guide"],
+  },
+  JP: { // 일본
+    entertainment: ["エンターテインメント", "娯楽", "ショー"],
+    music: ["日本の音楽", "歌", "音楽"],
+    education: ["教育", "学習", "授業"],
+    gaming: ["ゲーム", "ビデオゲーム", "ゲーミング"],
+    sports: ["スポーツ", "サッカー", "日本のスポーツ"],
+    news: ["ニュース", "ジャーナリズム", "情報"],
+    people: ["vlog", "日本のvlogger", "日本のyoutuber"],
+    howto: ["チュートリアル", "やり方", "ガイド"],
+  },
+  CN: { // 중국
+    entertainment: ["娱乐", "消遣", "表演"],
+    music: ["中国音乐", "歌曲", "音乐"],
+    education: ["教育", "学习", "教学"],
+    gaming: ["游戏", "电子游戏", "游戏"],
+    sports: ["体育", "足球", "中国体育"],
+    news: ["新闻", "新闻业", "信息"],
+    people: ["vlog", "中国vlogger", "中国youtuber"],
+    howto: ["教程", "如何做", "指南"],
+  },
+};
+
 // 카테고리 목록
 const CATEGORIES = [
   { id: "entertainment", name: "엔터테인먼트", nameEn: "Entertainment", keywords: ["entertainment", "funny", "comedy", "vlog", "show"] },
@@ -125,13 +294,20 @@ async function searchChannels(
 
 /**
  * 채널 상세 정보 가져오기 (배치 처리)
+ * @param channelIds 채널 ID 배열
+ * @param targetCountryCode 타겟 국가 코드 (필터링용)
  */
-async function fetchChannelDetails(channelIds: string[]): Promise<any[]> {
+async function fetchChannelDetails(channelIds: string[], targetCountryCode?: string): Promise<any[]> {
   if (channelIds.length === 0) return [];
   
   const apiKey = getNextApiKey();
   const batchSize = 50; // YouTube API는 최대 50개씩
   const results: any[] = [];
+  
+  // 국가별 최소 기준 가져오기
+  const minStandards = targetCountryCode && COUNTRY_MIN_STANDARDS[targetCountryCode]
+    ? COUNTRY_MIN_STANDARDS[targetCountryCode]
+    : { subscribers: MIN_SUBSCRIBER_COUNT, views: MIN_VIEW_COUNT };
   
   for (let i = 0; i < channelIds.length; i += batchSize) {
     const batch = channelIds.slice(i, i + batchSize);
@@ -158,11 +334,22 @@ async function fetchChannelDetails(channelIds: string[]): Promise<any[]> {
           const stats = item.statistics;
           const snippet = item.snippet;
           
-          // 최소 기준 필터링
+          // 최소 기준 필터링 (국가별 기준 적용)
           const subscriberCount = parseInt(stats.subscriberCount || "0");
           const viewCount = parseInt(stats.viewCount || "0");
           
-          if (subscriberCount >= MIN_SUBSCRIBER_COUNT && viewCount >= MIN_VIEW_COUNT) {
+          if (subscriberCount >= minStandards.subscribers && viewCount >= minStandards.views) {
+            const channelCountry = snippet.country || null;
+            
+            // 국가 필터링: 타겟 국가 코드가 있으면 필터링
+            if (targetCountryCode) {
+              // 채널 국가가 타겟 국가와 일치하거나 null인 경우만 포함
+              // (null인 경우는 YouTube API에서 국가 정보를 제공하지 않는 경우)
+              if (channelCountry && channelCountry !== targetCountryCode) {
+                continue; // 다른 국가 채널 제외
+              }
+            }
+            
             results.push({
               channelId: item.id,
               channelName: snippet.title,
@@ -171,7 +358,7 @@ async function fetchChannelDetails(channelIds: string[]): Promise<any[]> {
               subscriberCount,
               totalViewCount: viewCount,
               videoCount: parseInt(stats.videoCount || "0"),
-              country: snippet.country || null,
+              country: channelCountry || targetCountryCode || null, // 실제 국가 코드 우선, 없으면 타겟 국가 코드
               description: snippet.description || null,
               channelCreatedAt: snippet.publishedAt ? new Date(snippet.publishedAt) : null,
             });
@@ -232,13 +419,17 @@ async function saveChannel(
   countryCode: string
 ): Promise<boolean> {
   try {
+    // 실제 채널 국가 코드 사용 (우선순위)
+    // channelData.country가 있으면 사용, 없으면 검색한 countryCode 사용
+    const actualCountryCode = channelData.country || countryCode;
+    
     // 중복 체크
     const existing = await prisma.youTubeChannel.findUnique({
       where: { channelId: channelData.channelId },
     });
     
     if (existing) {
-      // 기존 채널 업데이트
+      // 기존 채널 업데이트 (국가 코드도 업데이트)
       await prisma.youTubeChannel.update({
         where: { channelId: channelData.channelId },
         data: {
@@ -249,6 +440,7 @@ async function saveChannel(
           profileImageUrl: channelData.profileImageUrl,
           handle: channelData.handle,
           description: channelData.description,
+          country: actualCountryCode, // 실제 국가 코드로 업데이트
           lastUpdated: new Date(),
         },
       });
@@ -267,7 +459,7 @@ async function saveChannel(
         totalViewCount: BigInt(channelData.totalViewCount),
         videoCount: channelData.videoCount,
         description: channelData.description,
-        country: countryCode,
+        country: actualCountryCode, // 실제 국가 코드 사용
         channelCreatedAt: channelData.channelCreatedAt,
       },
     });
@@ -338,6 +530,9 @@ async function collectChannelsForCountryCategory(
     ? Math.max(200 - existingChannels.length, 50) // 목표 달성 시 최소 50개 추가 수집
     : needToCollect * 1.5;
   
+  // 현지어 키워드 가져오기
+  const localKeywords = LOCAL_KEYWORDS[countryCode]?.[category.id] || [];
+  
   for (const keyword of category.keywords.slice(0, 10)) { // 키워드 5개 -> 10개로 증가
     const queries = [
       `${countryName} ${keyword}`,
@@ -346,6 +541,15 @@ async function collectChannelsForCountryCategory(
       `best ${countryName} ${keyword}`,
       `popular ${countryName} ${keyword}`,
     ];
+    
+    // 현지어 키워드 추가
+    for (const localKeyword of localKeywords.slice(0, 3)) { // 상위 3개 현지어 키워드만 사용
+      queries.push(
+        `${localKeyword}`,
+        `${localKeyword} ${countryName}`,
+        `${countryName} ${localKeyword}`
+      );
+    }
     
     for (const query of queries) {
       if (allChannelIds.size >= maxSearchResults) break;
@@ -370,11 +574,11 @@ async function collectChannelsForCountryCategory(
     return { collected: 0, saved: 0 };
   }
   
-  // 배치로 상세 정보 가져오기
+  // 배치로 상세 정보 가져오기 (국가 코드 전달하여 필터링)
   const channelIdsArray = Array.from(allChannelIds);
-  const channelDetails = await fetchChannelDetails(channelIdsArray);
+  const channelDetails = await fetchChannelDetails(channelIdsArray, countryCode);
   
-  console.log(`    📊 ${channelDetails.length}개 채널 상세 정보 수집 완료`);
+  console.log(`    📊 ${channelDetails.length}개 채널 상세 정보 수집 완료 (${countryCode} 필터링 적용)`);
   
   // 데이터베이스에 저장 (배치 처리)
   let savedCount = 0;
