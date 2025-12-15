@@ -2848,25 +2848,28 @@ export async function GET(request: NextRequest) {
       prisma.youTubeChannel.count({ where }),
     ]);
 
-    // YouTube 공식 채널 필터링 (애플리케이션 레벨) - 성능 최적화: Set 사용
-    // 데이터 부족 시 필터링 완화
+    // NoxInfluencer 벤치마킹: 프로필 이미지가 있는 채널만 표시
+    // 프로필 이미지가 없는 채널은 이미 where 조건에서 제외됨
+    
+    // YouTube 공식 채널 필터링 (NoxInfluencer도 공식 채널 제외)
     const officialChannelKeywords = new Set([
       "youtube movies", "youtube music", "youtube kids", "youtube gaming",
       "youtube tv", "youtube originals", "youtube creators", "youtube official",
       "youtube spotlight", "youtube trends", "youtube news"
     ]);
     
-    // 데이터가 적으면 필터링 완화
-    const shouldFilterOfficial = channels.length > 50; // 데이터가 충분할 때만 필터링
-    
-    const filteredChannels = shouldFilterOfficial
-      ? channels.filter((channel: any) => {
-          const channelNameLower = channel.channelName?.toLowerCase() || "";
-          return !Array.from(officialChannelKeywords).some(keyword => 
-            channelNameLower.includes(keyword)
-          );
-        })
-      : channels; // 데이터가 적으면 필터링하지 않음
+    const filteredChannels = channels.filter((channel: any) => {
+      // 프로필 이미지가 있는지 확인 (이중 체크)
+      if (!channel.profileImageUrl) {
+        return false;
+      }
+      
+      // 공식 채널 제외
+      const channelNameLower = channel.channelName?.toLowerCase() || "";
+      return !Array.from(officialChannelKeywords).some(keyword => 
+        channelNameLower.includes(keyword)
+      );
+    });
 
     // BigInt를 Number로 변환 및 필드명 매핑
     const formattedChannels = filteredChannels.map((channel: any, index: number) => ({

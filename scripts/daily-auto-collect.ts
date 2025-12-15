@@ -22,11 +22,11 @@ const exhaustedKeys = new Set<string>();
 const dailyQuotaUsed = new Map<string, number>(); // 키별 일일 사용량
 const QUOTA_LIMIT_PER_KEY = 9000; // 키당 일일 할당량 (안전 마진)
 
-// 목표 설정
-const TARGET_CHANNELS_PER_COUNTRY_CATEGORY = 300; // 최종 목표
-const MIN_REQUIRED_CHANNELS = 100; // 최소 보장 개수 (광고 삽입을 위한 최소 데이터)
-const MIN_SUBSCRIBER_COUNT = 1000;
-const MIN_VIEW_COUNT = 10000;
+// NoxInfluencer 벤치마킹 목표 설정
+const TARGET_CHANNELS_PER_COUNTRY_CATEGORY = 500; // NoxInfluencer는 TOP 100이지만 더 많은 데이터 확보
+const MIN_REQUIRED_CHANNELS = 200; // 최소 보장 개수 (NoxInfluencer 기준: 충분한 데이터)
+const MIN_SUBSCRIBER_COUNT = 1000; // NoxInfluencer 기준: 인기 채널 위주
+const MIN_VIEW_COUNT = 10000; // NoxInfluencer 기준: 최소 조회수
 
 // 국가별 최소 기준 조정 (작은 국가는 기준 완화)
 const COUNTRY_MIN_STANDARDS: Record<string, { subscribers: number; views: number }> = {
