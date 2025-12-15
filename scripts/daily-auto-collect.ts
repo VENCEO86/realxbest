@@ -302,24 +302,53 @@ async function collectChannelsForCountryCategory(
     // return { collected: 0, saved: 0 }; // 제거: 데이터 롤링을 위해 계속 진행
   }
   
-  const needToCollect = Math.max(
-    MIN_REQUIRED_CHANNELS - currentCount, // 최소 보장
-    TARGET_CHANNELS_PER_COUNTRY_CATEGORY - currentCount // 목표 달성
-  );
+  // 목표 달성 여부와 관계없이 최소 200개는 확보하도록 수집
+  const needToCollect = currentCount >= TARGET_CHANNELS_PER_COUNTRY_CATEGORY
+    ? Math.max(200 - currentCount, 0) // 목표 달성 시에도 최소 200개 보장
+    : Math.max(
+        MIN_REQUIRED_CHANNELS - currentCount, // 최소 보장
+        TARGET_CHANNELS_PER_COUNTRY_CATEGORY - currentCount // 목표 달성
+      );
+  
   console.log(`  🎯 ${countryName} - ${category.name}: ${currentCount}/${TARGET_CHANNELS_PER_COUNTRY_CATEGORY}개 (최소: ${MIN_REQUIRED_CHANNELS}개, ${needToCollect}개 필요)`);
   
   const allChannelIds = new Set<string>();
   
+  // 기존 채널 ID도 가져와서 업데이트 대상으로 포함 (데이터 롤링)
+  const existingChannels = await prisma.youTubeChannel.findMany({
+    where: {
+      country: countryCode,
+      categoryId: categoryId,
+    },
+    select: {
+      channelId: true,
+    },
+    take: 200, // 최대 200개 기존 채널 업데이트
+  });
+  
+  existingChannels.forEach(ch => {
+    if (ch.channelId) {
+      allChannelIds.add(ch.channelId);
+    }
+  });
+  
   // 카테고리 키워드로 검색 (순차 처리로 안정성 확보)
-  for (const keyword of category.keywords.slice(0, 5)) { // 상위 5개 키워드 사용
+  // 목표 달성 시에도 새로운 채널 수집 (최소 200개 보장)
+  const maxSearchResults = currentCount >= TARGET_CHANNELS_PER_COUNTRY_CATEGORY
+    ? Math.max(200 - existingChannels.length, 50) // 목표 달성 시 최소 50개 추가 수집
+    : needToCollect * 1.5;
+  
+  for (const keyword of category.keywords.slice(0, 10)) { // 키워드 5개 -> 10개로 증가
     const queries = [
       `${countryName} ${keyword}`,
       `${keyword} ${countryName}`,
       `top ${countryName} ${keyword}`,
+      `best ${countryName} ${keyword}`,
+      `popular ${countryName} ${keyword}`,
     ];
     
     for (const query of queries) {
-      if (allChannelIds.size >= needToCollect * 1.5) break;
+      if (allChannelIds.size >= maxSearchResults) break;
       
       const channels = await searchChannels(query, 50, countryCode);
       for (const ch of channels) {
@@ -332,7 +361,7 @@ async function collectChannelsForCountryCategory(
       await new Promise(resolve => setTimeout(resolve, 200));
     }
     
-    if (allChannelIds.size >= needToCollect * 1.5) break;
+    if (allChannelIds.size >= maxSearchResults) break;
   }
   
   console.log(`    📊 ${allChannelIds.size}개 채널 ID 수집 완료`);
