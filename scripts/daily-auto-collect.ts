@@ -22,16 +22,18 @@ const exhaustedKeys = new Set<string>();
 const dailyQuotaUsed = new Map<string, number>(); // 키별 일일 사용량
 const QUOTA_LIMIT_PER_KEY = 9000; // 키당 일일 할당량 (안전 마진)
 
-// NoxInfluencer 벤치마킹 목표 설정
+// NoxInfluencer 벤치마킹 목표 설정 (데이터 확보 우선)
 const TARGET_CHANNELS_PER_COUNTRY_CATEGORY = 500; // NoxInfluencer는 TOP 100이지만 더 많은 데이터 확보
 const MIN_REQUIRED_CHANNELS = 200; // 최소 보장 개수 (NoxInfluencer 기준: 충분한 데이터)
-const MIN_SUBSCRIBER_COUNT = 1000; // NoxInfluencer 기준: 인기 채널 위주
-const MIN_VIEW_COUNT = 10000; // NoxInfluencer 기준: 최소 조회수
+const MIN_SUBSCRIBER_COUNT = 100; // 데이터 확보를 위해 완화 (1000 → 100)
+const MIN_VIEW_COUNT = 1000; // 데이터 확보를 위해 완화 (10000 → 1000)
 
-// 국가별 최소 기준 조정 (작은 국가는 기준 완화)
+// 국가별 최소 기준 조정 (NoxInfluencer 벤치마킹: 더 많은 데이터 확보)
 const COUNTRY_MIN_STANDARDS: Record<string, { subscribers: number; views: number }> = {
-  IT: { subscribers: 500, views: 5000 },   // 이탈리아
-  TH: { subscribers: 500, views: 5000 },   // 태국
+  IT: { subscribers: 100, views: 1000 },   // 이탈리아 (기준 완화)
+  TH: { subscribers: 100, views: 1000 },   // 태국 (기준 완화)
+  JP: { subscribers: 100, views: 1000 },   // 일본 (기준 완화)
+  BR: { subscribers: 100, views: 1000 },   // 브라질 (기준 완화)
   VN: { subscribers: 500, views: 5000 },   // 베트남
   PH: { subscribers: 500, views: 5000 },   // 필리핀
   ID: { subscribers: 500, views: 5000 },   // 인도네시아
@@ -93,11 +95,11 @@ const COUNTRY_MIN_STANDARDS: Record<string, { subscribers: number; views: number
   KE: { subscribers: 500, views: 5000 },   // 케냐
 };
 
-// 국가별 현지어 키워드 매핑
+// 국가별 현지어 키워드 매핑 (NoxInfluencer 벤치마킹: 확대)
 const LOCAL_KEYWORDS: Record<string, Record<string, string[]>> = {
-  IT: { // 이탈리아
-    entertainment: ["intrattenimento", "divertimento", "spettacolo", "intrattenimento italiano"],
-    music: ["musica italiana", "canzoni italiane", "musica"],
+  IT: { // 이탈리아 (확대)
+    entertainment: ["intrattenimento", "divertimento", "spettacolo", "intrattenimento italiano", "youtuber italiani", "canali italiani", "creatori italiani", "italian youtuber", "italian channel"],
+    music: ["musica italiana", "canzoni italiane", "musica", "cantanti italiani", "artisti italiani", "italian music", "italian singer"],
     education: ["educazione", "istruzione", "scuola"],
     gaming: ["giochi", "videogiochi", "gaming italiano"],
     sports: ["sport", "calcio", "sport italiano"],
