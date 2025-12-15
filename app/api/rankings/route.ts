@@ -2858,23 +2858,25 @@ export async function GET(request: NextRequest) {
     });
 
     // BigInt를 Number로 변환 및 필드명 매핑
-    const formattedChannels = filteredChannels.map((channel: any) => ({
+    const formattedChannels = filteredChannels.map((channel: any, index: number) => ({
       id: channel.id,
       channelId: channel.channelId,
-      name: channel.channelName || "", // channelName -> name 매핑
+      channelName: channel.channelName || "", // name 필드도 유지하되 channelName도 포함
+      name: channel.channelName || "", // channelName -> name 매핑 (하위 호환성)
       handle: channel.handle,
-      profileImageUrl: channel.profileImageUrl,
+      profileImageUrl: channel.profileImageUrl || null, // null 처리 명시
       subscriberCount: Number(channel.subscriberCount),
       totalViewCount: Number(channel.totalViewCount),
       weeklyViewCount: Number(channel.weeklyViewCount || 0),
       weeklySubscriberChangeRate: channel.weeklySubscriberChangeRate || 0,
       weeklyViewCountChangeRate: channel.weeklyViewCountChangeRate || 0,
       averageEngagementRate: channel.averageEngagementRate || 0,
-      currentRank: channel.currentRank,
-      rankChange: channel.rankChange,
-      lastUpdated: channel.lastUpdated,
+      currentRank: channel.currentRank || (skip + index + 1), // 순위가 없으면 계산
+      rankChange: channel.rankChange || 0,
+      lastUpdated: channel.lastUpdated || new Date(),
       countryCode: channel.country || "", // country -> countryCode 매핑
       categoryName: channel.category?.name || "", // category.name -> categoryName 매핑
+      category: channel.category || { name: "" }, // category 객체도 포함 (하위 호환성)
     }));
 
     const result = {

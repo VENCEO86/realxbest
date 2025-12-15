@@ -410,11 +410,17 @@ async function fetchChannelDetails(channelIds: string[], targetCountryCode?: str
               }
             }
             
+            // 프로필 이미지 URL 우선순위: high > medium > default
+            const profileImageUrl = snippet.thumbnails?.high?.url 
+              || snippet.thumbnails?.medium?.url 
+              || snippet.thumbnails?.default?.url 
+              || null;
+            
             results.push({
               channelId: item.id,
               channelName: snippet.title,
               handle: snippet.customUrl?.replace("@", "") || null,
-              profileImageUrl: snippet.thumbnails?.high?.url || snippet.thumbnails?.default?.url,
+              profileImageUrl: profileImageUrl, // 명시적으로 처리
               subscriberCount,
               totalViewCount: viewCount,
               videoCount: parseInt(stats.videoCount || "0"),

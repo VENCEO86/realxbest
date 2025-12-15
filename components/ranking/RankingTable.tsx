@@ -39,9 +39,9 @@ async function fetchRankings(params: URLSearchParams, limit: number = 200): Prom
     
     const url = `/api/rankings?${apiParams.toString()}`;
     
-    // 타임아웃 설정 (5초로 단축)
+    // 타임아웃 설정 (30초로 증가 - 데이터가 많을 수 있음)
     const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), 5000);
+    const timeoutId = setTimeout(() => controller.abort(), 30000);
     
     const response = await fetch(url, {
       signal: controller.signal,
