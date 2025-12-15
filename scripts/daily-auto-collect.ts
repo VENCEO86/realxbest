@@ -291,11 +291,17 @@ const COUNTRY_LANGUAGE_CODES: Record<string, string> = {
   US: "en", // 영어 (미국)
 };
 
+/**
+ * NoxInfluencer 방식 채널 검색 (개선)
+ * - order 파라미터 활용 (viewCount, rating, relevance 등)
+ * - 다양한 정렬 기준으로 인기 채널 우선 수집
+ */
 async function searchChannels(
   query: string,
   maxResults: number = 50,
   regionCode?: string,
-  languageCode?: string
+  languageCode?: string,
+  order: "viewCount" | "rating" | "relevance" | "date" = "viewCount"
 ): Promise<Array<{ channelId: string; channelName: string }>> {
   const apiKey = getNextApiKey();
   incrementApiUsage(apiKey, 100); // Search API는 100 units
@@ -306,6 +312,7 @@ async function searchChannels(
       q: query,
       type: "channel",
       maxResults: String(Math.min(maxResults, 50)),
+      order: order, // NoxInfluencer처럼 정렬 기준 활용 (인기 채널 우선)
       key: apiKey,
     });
     
