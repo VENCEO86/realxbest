@@ -61,9 +61,9 @@ export async function GET(request: NextRequest) {
     const period = searchParams.get("period") || "weekly";
     const page = parseInt(searchParams.get("page") || "1");
     
-    // limit 최적화: 성능을 위해 최대 30개로 제한 (초기 로딩 속도 향상)
-    const requestedLimit = parseInt(searchParams.get("limit") || "20");
-    const limit = Math.min(requestedLimit, 30); // 최대 30개로 제한
+    // limit 설정: 광고 삽입을 위해 충분한 데이터 필요 (최소 200개 이상)
+    const requestedLimit = parseInt(searchParams.get("limit") || "200");
+    const limit = Math.min(requestedLimit, 500); // 최대 500개로 제한 (광고 삽입 고려)
     const skip = (page - 1) * limit;
 
     // 실제 YouTube API 데이터 가져오기 (데이터베이스가 없을 때)

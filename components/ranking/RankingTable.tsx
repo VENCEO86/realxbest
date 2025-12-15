@@ -72,10 +72,10 @@ export function RankingTable() {
   const category = searchParams.get("category");
   const country = searchParams.get("country");
   
-  // limit 최적화: 성능을 위해 최대 30개로 제한 (초기 로딩 속도 향상)
+  // limit 설정: 광고 삽입을 위해 충분한 데이터 필요 (최소 200개 이상)
   const limit = Math.min(
-    parseInt(searchParams.get("limit") || "20"),
-    30 // 최대 30개로 제한
+    parseInt(searchParams.get("limit") || "200"),
+    500 // 최대 500개로 제한 (광고 삽입 고려)
   );
 
   const { data, isLoading, error, isError } = useQuery({
