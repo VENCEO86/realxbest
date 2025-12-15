@@ -10,6 +10,7 @@ on:
 jobs:
   collect:
     runs-on: ubuntu-latest
+    timeout-minutes: 60  # 최대 60분 실행 (타임아웃 방지)
     
     steps:
       - name: Checkout code
@@ -22,26 +23,41 @@ jobs:
           cache: 'npm'
       
       - name: Install dependencies
-        run: npm ci --legacy-peer-deps
+        run: |
+          echo "📦 Installing dependencies..."
+          npm ci --legacy-peer-deps
+          echo "✅ Dependencies installed"
         
       - name: Verify tsx installation
-        run: npx tsx --version || npm install -g tsx
+        run: |
+          echo "🔍 Verifying tsx installation..."
+          npx tsx --version || npm install -g tsx
+          echo "✅ tsx verified"
         
       - name: Generate Prisma Client
         env:
           DATABASE_URL: ${{ secrets.DATABASE_URL }}
-        run: npx prisma generate
+        run: |
+          echo "🔧 Generating Prisma Client..."
+          npx prisma generate
+          echo "✅ Prisma Client generated"
         continue-on-error: false
         
       - name: Setup database
         env:
           DATABASE_URL: ${{ secrets.DATABASE_URL }}
-        run: npm run db:setup
+        run: |
+          echo "🗄️ Setting up database..."
+          npm run db:setup
+          echo "✅ Database setup completed"
         continue-on-error: false
         
       - name: Run daily collection
         env:
           DATABASE_URL: ${{ secrets.DATABASE_URL }}
           YOUTUBE_API_KEYS: ${{ secrets.YOUTUBE_API_KEYS }}
-        run: npm run collect:daily
+        run: |
+          echo "🚀 Starting daily channel collection..."
+          npm run collect:daily
+          echo "✅ Daily collection completed"
         continue-on-error: false
