@@ -626,7 +626,7 @@ async function collectChannelsForCountryCategory(
   
   const allChannelIds = new Set<string>();
   
-  // 기존 채널 ID도 가져와서 업데이트 대상으로 포함 (데이터 롤링)
+  // 기존 채널 ID 가져오기 (중복 제거용만 - 검색에서 제외하여 할당량 절약)
   const existingChannels = await prisma.youTubeChannel.findMany({
     where: {
       country: countryCode,
@@ -635,14 +635,10 @@ async function collectChannelsForCountryCategory(
     select: {
       channelId: true,
     },
-    take: 200, // 최대 200개 기존 채널 업데이트
   });
   
-  existingChannels.forEach(ch => {
-    if (ch.channelId) {
-      allChannelIds.add(ch.channelId);
-    }
-  });
+  // 기존 채널 ID를 Set에 추가 (중복 제거용만 - 검색에서 제외)
+  const existingChannelIdsSet = new Set(existingChannels.map(ch => ch.channelId));
   
   // 카테고리 키워드로 검색 (순차 처리로 안정성 확보)
   // NoxInfluencer 벤치마킹: 더 많은 검색 결과 확보
@@ -757,8 +753,9 @@ async function collectChannelsForCountryCategory(
           order // 정렬 기준 전달
         );
         
+        // 기존 채널 제외하고 새로운 채널만 추가 (할당량 절약)
         for (const ch of channels) {
-          if (ch.channelId) {
+          if (ch.channelId && !existingChannelIdsSet.has(ch.channelId) && !allChannelIds.has(ch.channelId)) {
             allChannelIds.add(ch.channelId);
           }
         }
