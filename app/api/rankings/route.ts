@@ -2686,14 +2686,8 @@ export async function GET(request: NextRequest) {
       };
     };
 
-    // 데이터베이스 연결 확인
-    let useMock = false;
-    try {
-      await prisma.$connect();
-    } catch (dbError) {
-      // 데이터베이스 연결 에러 (에러 로그 제거 - 성능 최적화)
-      useMock = true;
-    }
+    // 데이터베이스 연결 확인 (Prisma는 필요 시 자동 연결하므로 실제 쿼리 시도)
+    // useMock 로직 제거 - 실제 데이터베이스 쿼리를 항상 시도
 
     // 카테고리 필터
     const where: any = {};
@@ -2789,42 +2783,8 @@ export async function GET(request: NextRequest) {
         orderBy = { subscriberCount: "desc" };
     }
 
-    // 데이터 조회
-    if (useMock) {
-      // 실제 YouTube API 데이터 가져오기 시도
-      const apiData = await getYouTubeAPIData();
-      // YouTube 공식 채널 필터링
-      const officialChannelKeywords = [
-        "youtube movies", "youtube music", "youtube kids", "youtube gaming",
-        "youtube tv", "youtube originals", "youtube creators", "youtube official",
-        "youtube spotlight", "youtube trends", "youtube news"
-      ];
-      
-      const filteredApiChannels = apiData.channels.filter((channel: any) => {
-        const channelNameLower = channel.channelName.toLowerCase();
-        const isOfficialChannel = officialChannelKeywords.some(keyword => 
-          channelNameLower.includes(keyword)
-        );
-        return !isOfficialChannel;
-      });
-      
-      const result = {
-        channels: filteredApiChannels,
-        total: filteredApiChannels.length,
-        page,
-        limit,
-      };
-
-      // 캐시에 저장
-      rankingsCache.set(cacheKey, { data: result, timestamp: Date.now() });
-      
-      return NextResponse.json(result, {
-        headers: {
-          'Cache-Control': 'public, s-maxage=600, stale-while-revalidate=1200',
-        },
-      });
-    }
-
+    // 데이터베이스에서 실제 데이터 조회
+    // Prisma는 필요 시 자동으로 연결하므로 직접 연결 확인 불필요
     // 쿼리 최적화: 필요한 필드만 선택
     const [channels, total] = await Promise.all([
       prisma.youTubeChannel.findMany({
