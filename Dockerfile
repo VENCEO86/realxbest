@@ -26,7 +26,9 @@ FROM base AS builder
 WORKDIR /app
 
 # 빌드 단계에서도 OpenSSL 라이브러리 필요
-RUN apk add --no-cache openssl1.1-compat libc6-compat
+RUN apk add --no-cache openssl1.1-compat openssl-libs-compat libc6-compat || \
+    apk add --no-cache openssl1.1 libc6-compat || \
+    apk add --no-cache openssl libc6-compat
 
 COPY --from=deps /app/node_modules ./node_modules
 COPY . .
@@ -52,7 +54,10 @@ ENV NODE_ENV production
 ENV NEXT_TELEMETRY_DISABLED 1
 
 # Prisma 엔진 실행을 위한 필수 라이브러리 설치
-RUN apk add --no-cache openssl1.1-compat libc6-compat
+# Alpine Linux에서 Prisma는 openssl1.1-compat 또는 openssl-libs-compat가 필요
+RUN apk add --no-cache openssl1.1-compat openssl-libs-compat libc6-compat || \
+    apk add --no-cache openssl1.1 libc6-compat || \
+    apk add --no-cache openssl libc6-compat
 
 RUN addgroup --system --gid 1001 nodejs
 RUN adduser --system --uid 1001 nextjs
