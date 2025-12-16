@@ -801,8 +801,9 @@ async function collectChannelsForCountryCategory(
         for (const query of countryOnlyQueries) {
           if (allChannelIds.size >= maxSearchResults) break;
           const channels = await searchChannels(query, 50, countryCode, languageCode, "viewCount");
+          // 기존 채널 제외하고 새로운 채널만 추가 (할당량 절약)
           for (const ch of channels) {
-            if (ch.channelId) {
+            if (ch.channelId && !existingChannelIdsSet.has(ch.channelId) && !allChannelIds.has(ch.channelId)) {
               allChannelIds.add(ch.channelId);
             }
           }
