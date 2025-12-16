@@ -24,6 +24,10 @@ RUN npm install --ignore-scripts --legacy-peer-deps --no-audit --prefer-offline 
 # 빌드 단계
 FROM base AS builder
 WORKDIR /app
+
+# 빌드 단계에서도 OpenSSL 라이브러리 필요
+RUN apk add --no-cache openssl1.1-compat libc6-compat
+
 COPY --from=deps /app/node_modules ./node_modules
 COPY . .
 
@@ -47,6 +51,9 @@ WORKDIR /app
 ENV NODE_ENV production
 ENV NEXT_TELEMETRY_DISABLED 1
 
+# Prisma 엔진 실행을 위한 필수 라이브러리 설치
+RUN apk add --no-cache openssl1.1-compat libc6-compat
+
 RUN addgroup --system --gid 1001 nodejs
 RUN adduser --system --uid 1001 nextjs
 
@@ -55,6 +62,10 @@ RUN adduser --system --uid 1001 nextjs
 COPY --from=builder --chown=nextjs:nodejs /app/.next/standalone ./
 COPY --from=builder --chown=nextjs:nodejs /app/.next/static ./.next/static
 COPY --from=builder --chown=nextjs:nodejs /app/public ./public
+
+# Prisma 클라이언트 복사 (런타임에 필요)
+COPY --from=builder --chown=nextjs:nodejs /app/node_modules/.prisma ./node_modules/.prisma
+COPY --from=builder --chown=nextjs:nodejs /app/node_modules/@prisma ./node_modules/@prisma
 
 USER nextjs
 
