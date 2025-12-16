@@ -2883,6 +2883,26 @@ export async function GET(request: NextRequest) {
       return true;
     });
 
+    // 데이터가 없으면 빈 배열 반환 (Mock 데이터로 fallback하지 않음)
+    if (channels.length === 0) {
+      console.log("[Rankings API] 데이터베이스에서 채널을 찾을 수 없습니다. 쿼리 조건:", JSON.stringify(where));
+      
+      const result = {
+        channels: [],
+        total: 0,
+        page,
+        limit,
+      };
+
+      rankingsCache.set(cacheKey, { data: result, timestamp: Date.now() });
+      
+      return NextResponse.json(result, {
+        headers: {
+          'Cache-Control': 'public, s-maxage=600, stale-while-revalidate=1200',
+        },
+      });
+    }
+
     // BigInt를 Number로 변환 및 필드명 매핑
     const formattedChannels = filteredChannels.map((channel: any, index: number) => {
       // 주간 조회수 계산 (데이터베이스에 없으면 총 조회수의 5%로 추정)
