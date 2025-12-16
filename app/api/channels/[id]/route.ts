@@ -49,7 +49,7 @@ export async function GET(
             take: 10,
           },
           growthData: {
-            orderBy: { date: "desc" },
+            orderBy: { date: "asc" }, // 오래된 순 → 최신 순 (좌 → 우)
             take: 30,
           },
         },
