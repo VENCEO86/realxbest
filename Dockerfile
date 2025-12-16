@@ -55,10 +55,13 @@ ENV NODE_ENV production
 ENV NEXT_TELEMETRY_DISABLED 1
 
 # Prisma 엔진 실행을 위한 필수 라이브러리 설치
-# Alpine Linux에서 Prisma는 openssl1.1-compat 또는 openssl-libs-compat가 필요
-RUN apk add --no-cache openssl1.1-compat openssl-libs-compat libc6-compat || \
-    apk add --no-cache openssl1.1 libc6-compat || \
-    apk add --no-cache openssl libc6-compat
+# Alpine Linux에서 Prisma는 openssl1.1-compat가 필요
+RUN apk add --no-cache openssl1.1-compat libc6-compat && \
+    # 심볼릭 링크 생성 (Prisma 엔진이 libssl.so.3를 찾을 수 있도록)
+    (test -f /usr/lib/libssl.so.1.1 && ln -sf /usr/lib/libssl.so.1.1 /usr/lib/libssl.so.3 || true) && \
+    (test -f /usr/lib/libcrypto.so.1.1 && ln -sf /usr/lib/libcrypto.so.1.1 /usr/lib/libcrypto.so.3 || true) && \
+    # 라이브러리 경로 확인
+    ls -la /usr/lib/libssl* /usr/lib/libcrypto* || true
 
 RUN addgroup --system --gid 1001 nodejs
 RUN adduser --system --uid 1001 nextjs
