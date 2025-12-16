@@ -40,15 +40,18 @@ async function fetchRankings(params: URLSearchParams, limit: number = 200): Prom
     
     const url = `/api/rankings?${apiParams.toString()}`;
     
-    // 타임아웃 설정 (30초로 증가 - 데이터가 많을 수 있음)
+    // 타임아웃 설정 (60초로 증가 - Render 무료 플랜 spin down 대응)
+    // Render 무료 플랜은 첫 요청 시 최대 50초 지연 가능
     const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), 30000);
+    const timeoutId = setTimeout(() => controller.abort(), 60000);
     
     const response = await fetch(url, {
       signal: controller.signal,
       headers: {
         'Content-Type': 'application/json',
       },
+      // Render spin down 대응: 첫 요청 시 지연 허용
+      cache: 'no-store',
     });
     
     clearTimeout(timeoutId);
@@ -90,7 +93,9 @@ export function RankingTable() {
     queryKey: ["rankings", searchParams.toString(), limit],
     queryFn: () => fetchRankings(searchParams, limit),
     staleTime: 2 * 60 * 1000, // 2분 캐시
-    retry: 1,
+    retry: 3, // Render spin down 대응: 재시도 횟수 증가
+    retryDelay: (attemptIndex) => Math.min(1000 * 2 ** attemptIndex, 30000), // 지수 백오프 (최대 30초)
+    refetchOnWindowFocus: false, // 창 포커스 시 재요청 방지
   });
 
   if (isLoading) {
