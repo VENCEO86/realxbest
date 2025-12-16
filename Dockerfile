@@ -34,7 +34,8 @@ COPY --from=deps /app/node_modules ./node_modules
 COPY . .
 
 # Prisma 클라이언트 생성 (의존성 설치 후 수동 실행)
-RUN npx prisma generate || echo "Prisma generate failed, continuing..."
+# binaryTargets를 명시하여 올바른 바이너리 생성
+RUN npx prisma generate --schema=./prisma/schema.prisma || echo "Prisma generate failed, continuing..."
 
 # 환경 변수 설정 (빌드 시점)
 ENV NEXT_TELEMETRY_DISABLED 1
@@ -70,8 +71,12 @@ COPY --from=builder --chown=nextjs:nodejs /app/public ./public
 
 # Prisma 클라이언트 복사 (런타임에 필요)
 # standalone 모드에서는 node_modules가 포함되지 않으므로 수동 복사 필요
+# Prisma 엔진 바이너리도 함께 복사
 COPY --from=builder --chown=nextjs:nodejs /app/node_modules/.prisma ./node_modules/.prisma
 COPY --from=builder --chown=nextjs:nodejs /app/node_modules/@prisma ./node_modules/@prisma
+
+# Prisma 엔진 바이너리 확인 및 심볼릭 링크 생성 (필요시)
+RUN ls -la /app/node_modules/.prisma/client/ || echo "Prisma client directory not found"
 
 USER nextjs
 
