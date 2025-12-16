@@ -2786,37 +2786,77 @@ export async function GET(request: NextRequest) {
     // 데이터베이스에서 실제 데이터 조회
     // Prisma는 필요 시 자동으로 연결하므로 직접 연결 확인 불필요
     // 쿼리 최적화: 필요한 필드만 선택
-    const [channels, total] = await Promise.all([
-      prisma.youTubeChannel.findMany({
-        where,
-        select: {
-          id: true,
-          channelId: true,
-          channelName: true,
-          handle: true,
-          profileImageUrl: true,
-          subscriberCount: true,
-          totalViewCount: true,
-          weeklySubscriberChangeRate: true,
-          weeklyViewCount: true,
-          weeklyViewCountChangeRate: true,
-          averageEngagementRate: true,
-          currentRank: true,
-          rankChange: true,
-          lastUpdated: true,
-          country: true, // 국가 코드 추가
-          category: {
-            select: {
-              name: true,
+    let channels: any[] = [];
+    let total = 0;
+    
+    try {
+      [channels, total] = await Promise.all([
+        prisma.youTubeChannel.findMany({
+          where,
+          select: {
+            id: true,
+            channelId: true,
+            channelName: true,
+            handle: true,
+            profileImageUrl: true,
+            subscriberCount: true,
+            totalViewCount: true,
+            weeklySubscriberChangeRate: true,
+            weeklyViewCount: true,
+            weeklyViewCountChangeRate: true,
+            averageEngagementRate: true,
+            currentRank: true,
+            rankChange: true,
+            lastUpdated: true,
+            country: true, // 국가 코드 추가
+            category: {
+              select: {
+                name: true,
+              },
             },
           },
+          orderBy,
+          skip,
+          take: limit,
+        }),
+        prisma.youTubeChannel.count({ where }),
+      ]);
+    } catch (dbError: any) {
+      // 데이터베이스 쿼리 실패 시 에러 로깅 및 fallback
+      console.error("[Rankings API] 데이터베이스 쿼리 실패:", dbError.message);
+      
+      // 데이터베이스 연결 실패 시 Mock 데이터 반환 (fallback)
+      const apiData = await getYouTubeAPIData();
+      const officialChannelKeywords = [
+        "youtube movies", "youtube music", "youtube kids", "youtube gaming",
+        "youtube tv", "youtube originals", "youtube creators", "youtube official",
+        "youtube spotlight", "youtube trends", "youtube news"
+      ];
+      
+      const filteredApiChannels = apiData.channels.filter((channel: any) => {
+        const channelNameLower = channel.channelName.toLowerCase();
+        const isOfficialChannel = officialChannelKeywords.some(keyword => 
+          channelNameLower.includes(keyword)
+        );
+        return !isOfficialChannel;
+      });
+      
+      const result = {
+        channels: filteredApiChannels,
+        total: filteredApiChannels.length,
+        page,
+        limit,
+      };
+
+      // 캐시에 저장
+      rankingsCache.set(cacheKey, { data: result, timestamp: Date.now() });
+      
+      return NextResponse.json(result, {
+        headers: {
+          'Cache-Control': 'public, s-maxage=600, stale-while-revalidate=1200',
         },
-        orderBy,
-        skip,
-        take: limit,
-      }),
-      prisma.youTubeChannel.count({ where }),
-    ]);
+      });
+    }
 
     // YouTube 공식 채널 필터링 (데이터 부족 시 완화)
     const officialChannelKeywords = new Set([
