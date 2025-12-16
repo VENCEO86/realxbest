@@ -198,16 +198,16 @@ export async function GET(
             const baseSubscribers = youtubeData.subscriberCount;
             const baseViews = youtubeData.totalViewCount;
             
-            // 최근 7일간의 추정 성장 데이터 생성
-            for (let i = 6; i >= 0; i--) {
+            // 최근 7일간의 추정 성장 데이터 생성 (오래된 순 → 최신 순)
+            for (let i = 0; i <= 6; i++) {
               const date = new Date(now);
-              date.setDate(date.getDate() - i);
+              date.setDate(date.getDate() - (6 - i)); // 오래된 날짜부터
               // 약간의 변동을 주어 차트가 보이도록
               const variation = 1 + (Math.random() * 0.02 - 0.01); // ±1% 변동
               growthData.push({
                 date: date,
-                subscriberCount: Math.floor(baseSubscribers * variation * (1 - (6 - i) * 0.001)),
-                viewCount: Math.floor(baseViews * variation * (1 - (6 - i) * 0.001)),
+                subscriberCount: Math.floor(baseSubscribers * variation * (1 - i * 0.001)),
+                viewCount: Math.floor(baseViews * variation * (1 - i * 0.001)),
               });
             }
           }

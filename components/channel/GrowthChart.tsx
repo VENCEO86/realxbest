@@ -95,9 +95,14 @@ export function GrowthChart({ growthData }: { growthData: GrowthData[] }) {
     
     if (safeGrowthData.length === 0) return [];
 
+    // 날짜 순으로 정렬 (오래된 순 → 최신 순: 좌 → 우)
     return safeGrowthData
       .slice()
-      .reverse()
+      .sort((a, b) => {
+        const dateA = a.date instanceof Date ? a.date : new Date(a.date);
+        const dateB = b.date instanceof Date ? b.date : new Date(b.date);
+        return dateA.getTime() - dateB.getTime(); // 오래된 순서부터
+      })
       .map((data) => {
         try {
           const date = data.date instanceof Date ? data.date : new Date(data.date);
