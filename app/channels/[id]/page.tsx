@@ -11,7 +11,10 @@ export const dynamic = 'force-dynamic';
 async function getChannel(id: string) {
   try {
     // API를 통해 채널 데이터 가져오기
-    const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || "http://localhost:3001";
+    // 서버 사이드에서는 절대 경로 사용 불가, 상대 경로 사용
+    const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || 
+                    process.env.NEXT_PUBLIC_APP_URL ||
+                    (process.env.NODE_ENV === 'development' ? 'http://localhost:3000' : 'https://realxbest.com');
     const response = await fetch(`${baseUrl}/api/channels/${id}`, {
       next: { revalidate: 300 }, // 5분 캐시
     });
