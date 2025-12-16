@@ -25,6 +25,7 @@
     "db:setup": "tsx scripts/setup-db-auto.ts",
     "collect:daily": "tsx scripts/daily-auto-collect.ts",
     "collect:nox": "tsx scripts/noxinfluencer-style-collect.ts",
+    "update:weekly": "tsx scripts/weekly-update-channels.ts",
     "collect-auto": "npm run db:setup && npm run collect:daily",
     "verify-secrets": "tsx scripts/verify-secrets.ts"
   },

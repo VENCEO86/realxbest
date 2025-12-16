@@ -549,21 +549,8 @@ async function saveChannel(
     });
     
     if (existing) {
-      // 기존 채널 업데이트 (국가 코드도 업데이트)
-      await prisma.youTubeChannel.update({
-        where: { channelId: channelData.channelId },
-        data: {
-          channelName: channelData.channelName,
-          subscriberCount: BigInt(channelData.subscriberCount),
-          totalViewCount: BigInt(channelData.totalViewCount),
-          videoCount: channelData.videoCount,
-          profileImageUrl: channelData.profileImageUrl,
-          handle: channelData.handle,
-          description: channelData.description,
-          country: actualCountryCode, // 실제 국가 코드로 업데이트
-          lastUpdated: new Date(),
-        },
-      });
+      // 기존 채널은 업데이트하지 않음 (할당량 절약)
+      // 업데이트는 별도 스크립트(weekly-update-channels.ts)로 주 1회 수행
       return false; // 새로 저장한 것이 아님
     }
     
@@ -621,15 +608,21 @@ async function collectChannelsForCountryCategory(
     // return { collected: 0, saved: 0 }; // 제거: 데이터 롤링을 위해 계속 진행
   }
   
-  // 목표 달성 여부와 관계없이 최소 200개는 확보하도록 수집
+  // 신규 채널 수집 목표 계산 (기존 채널 업데이트는 별도 스크립트로 분리)
   const needToCollect = currentCount >= TARGET_CHANNELS_PER_COUNTRY_CATEGORY
-    ? Math.max(200 - currentCount, 0) // 목표 달성 시에도 최소 200개 보장
+    ? 0 // 목표 달성 시 신규 수집 중단 (할당량 절약)
     : Math.max(
         MIN_REQUIRED_CHANNELS - currentCount, // 최소 보장
         TARGET_CHANNELS_PER_COUNTRY_CATEGORY - currentCount // 목표 달성
       );
   
-  console.log(`  🎯 ${countryName} - ${category.name}: ${currentCount}/${TARGET_CHANNELS_PER_COUNTRY_CATEGORY}개 (최소: ${MIN_REQUIRED_CHANNELS}개, ${needToCollect}개 필요)`);
+  // 목표 달성 시 신규 수집 스킵
+  if (needToCollect === 0) {
+    console.log(`  ✅ ${countryName} - ${category.name}: ${currentCount}개 (목표 달성, 신규 수집 스킵)`);
+    return { collected: 0, saved: 0 };
+  }
+  
+  console.log(`  🎯 ${countryName} - ${category.name}: ${currentCount}/${TARGET_CHANNELS_PER_COUNTRY_CATEGORY}개 (신규 ${needToCollect}개 필요)`);
   
   const allChannelIds = new Set<string>();
   
@@ -654,11 +647,10 @@ async function collectChannelsForCountryCategory(
   // 카테고리 키워드로 검색 (순차 처리로 안정성 확보)
   // NoxInfluencer 벤치마킹: 더 많은 검색 결과 확보
   // 데이터 부족 국가(이탈리아 등)는 더 많이 검색
-  const maxSearchResults = currentCount >= TARGET_CHANNELS_PER_COUNTRY_CATEGORY
-    ? Math.max(500 - existingChannels.length, 200) // 목표 달성 시에도 더 많이 검색
-    : (countryCode === "IT" || currentCount < MIN_REQUIRED_CHANNELS)
-      ? needToCollect * 5 // 데이터 부족 국가는 5배 검색 (이탈리아 등)
-      : needToCollect * 3; // 필요량의 3배 검색 (더 많은 후보 확보)
+  // 신규 채널 수집에 집중 (기존 채널 제외하여 할당량 절약)
+  const maxSearchResults = (countryCode === "IT" || currentCount < MIN_REQUIRED_CHANNELS)
+    ? needToCollect * 5 // 데이터 부족 국가는 5배 검색 (이탈리아 등)
+    : needToCollect * 3; // 필요량의 3배 검색 (더 많은 후보 확보)
   
   // 현지어 키워드 가져오기
   const localKeywords = LOCAL_KEYWORDS[countryCode]?.[category.id] || [];
