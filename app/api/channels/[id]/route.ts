@@ -213,17 +213,17 @@ export async function GET(
           }
         } catch (error) {
           console.error("Error fetching growth data:", error);
-          // 오류 시 최근 7일간의 추정 데이터 생성
+          // 오류 시 최근 7일간의 추정 데이터 생성 (오래된 순 → 최신 순)
           const now = new Date();
           const baseSubscribers = youtubeData.subscriberCount;
           const baseViews = youtubeData.totalViewCount;
-          for (let i = 6; i >= 0; i--) {
+          for (let i = 0; i <= 6; i++) {
             const date = new Date(now);
-            date.setDate(date.getDate() - i);
+            date.setDate(date.getDate() - (6 - i)); // 오래된 날짜부터
             growthData.push({
               date: date,
-              subscriberCount: Math.floor(baseSubscribers * (1 - (6 - i) * 0.001)),
-              viewCount: Math.floor(baseViews * (1 - (6 - i) * 0.001)),
+              subscriberCount: Math.floor(baseSubscribers * (1 - i * 0.001)),
+              viewCount: Math.floor(baseViews * (1 - i * 0.001)),
             });
           }
         }
@@ -338,13 +338,14 @@ export async function GET(
       if (baseSubscribers > 0 && baseViews > 0) {
         const now = new Date();
         const estimatedGrowthData = [];
-        for (let i = 6; i >= 0; i--) {
+        // 오래된 순 → 최신 순 (좌 → 우)
+        for (let i = 0; i <= 6; i++) {
           const date = new Date(now);
-          date.setDate(date.getDate() - i);
+          date.setDate(date.getDate() - (6 - i)); // 오래된 날짜부터
           estimatedGrowthData.push({
             date: date,
-            subscriberCount: BigInt(Math.floor(baseSubscribers * (1 - (6 - i) * 0.001))),
-            viewCount: BigInt(Math.floor(baseViews * (1 - (6 - i) * 0.001))),
+            subscriberCount: BigInt(Math.floor(baseSubscribers * (1 - i * 0.001))),
+            viewCount: BigInt(Math.floor(baseViews * (1 - i * 0.001))),
           });
         }
         channel.growthData = estimatedGrowthData;
