@@ -609,17 +609,25 @@ async function collectChannelsForCountryCategory(
   }
   
   // 신규 채널 수집 목표 계산 (기존 채널 업데이트는 별도 스크립트로 분리)
+  // 최소 보장 개수(200개) 미달 시 우선 수집
   const needToCollect = currentCount >= TARGET_CHANNELS_PER_COUNTRY_CATEGORY
     ? 0 // 목표 달성 시 신규 수집 중단 (할당량 절약)
-    : Math.max(
-        MIN_REQUIRED_CHANNELS - currentCount, // 최소 보장
-        TARGET_CHANNELS_PER_COUNTRY_CATEGORY - currentCount // 목표 달성
-      );
+    : currentCount < MIN_REQUIRED_CHANNELS
+      ? MIN_REQUIRED_CHANNELS - currentCount // 최소 보장 개수 미달 시 우선 수집
+      : Math.max(
+          MIN_REQUIRED_CHANNELS - currentCount, // 최소 보장
+          TARGET_CHANNELS_PER_COUNTRY_CATEGORY - currentCount // 목표 달성
+        );
   
-  // 목표 달성 시 신규 수집 스킵
-  if (needToCollect === 0) {
+  // 목표 달성 시 신규 수집 스킵 (단, 최소 보장 개수 미달 시에는 계속 수집)
+  if (needToCollect === 0 && currentCount >= MIN_REQUIRED_CHANNELS) {
     console.log(`  ✅ ${countryName} - ${category.name}: ${currentCount}개 (목표 달성, 신규 수집 스킵)`);
     return { collected: 0, saved: 0 };
+  }
+  
+  // 최소 보장 개수 미달 시 경고
+  if (currentCount < MIN_REQUIRED_CHANNELS) {
+    console.log(`  ⚠️ ${countryName} - ${category.name}: ${currentCount}개 (최소 ${MIN_REQUIRED_CHANNELS}개 미달, ${needToCollect}개 긴급 수집 필요)`);
   }
   
   console.log(`  🎯 ${countryName} - ${category.name}: ${currentCount}/${TARGET_CHANNELS_PER_COUNTRY_CATEGORY}개 (신규 ${needToCollect}개 필요)`);
