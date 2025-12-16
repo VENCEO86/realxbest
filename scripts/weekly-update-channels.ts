@@ -103,7 +103,7 @@ async function main() {
       where: {
         OR: [
           { lastUpdated: { lt: sevenDaysAgo } },
-          { lastUpdated: null },
+          { lastUpdated: null as any },
         ],
       },
       select: {
