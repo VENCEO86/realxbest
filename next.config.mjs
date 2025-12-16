@@ -4,6 +4,7 @@ const nextConfig = {
   // Prisma 클라이언트를 standalone 빌드에 포함
   experimental: {
     serverComponentsExternalPackages: ['@prisma/client'],
+    optimizePackageImports: ["recharts"],
   },
   images: {
     remotePatterns: [
@@ -30,9 +31,6 @@ const nextConfig = {
     ],
     unoptimized: false,
     minimumCacheTTL: 86400, // 24시간 캐시
-  },
-  experimental: {
-    optimizePackageImports: ["recharts"],
   },
   // 성능 최적화
   compress: true,
