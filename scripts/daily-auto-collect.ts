@@ -873,49 +873,116 @@ async function main() {
     console.log("✅ 데이터베이스 연결 성공\n");
     
     const countries = COUNTRIES.filter(c => c.value !== "all");
-    let totalCollected = 0;
-    let totalSaved = 0;
-    let processed = 0;
-    const total = countries.length * CATEGORIES.length;
+    
+    // 1단계: 데이터가 없는 국가 우선 수집
+    console.log("🔍 데이터가 없는 국가 확인 중...\n");
+    const emptyCountries: Array<{ code: string; name: string; count: number }> = [];
+    const countriesWithData: Array<{ code: string; name: string; count: number }> = [];
     
     for (const country of countries) {
-      console.log(`\n🌍 ${country.label} (${country.value}) 처리 중...\n`);
+      const count = await prisma.youTubeChannel.count({
+        where: { country: country.value },
+      });
       
-      for (const category of CATEGORIES) {
-        processed++;
-        const progress = ((processed / total) * 100).toFixed(1);
-        console.log(`[${progress}%] 진행 중...`);
+      if (count === 0) {
+        emptyCountries.push({ code: country.value, name: country.label, count });
+      } else {
+        countriesWithData.push({ code: country.value, name: country.label, count });
+      }
+    }
+    
+    console.log(`📊 데이터가 없는 국가: ${emptyCountries.length}개`);
+    console.log(`📊 데이터가 있는 국가: ${countriesWithData.length}개\n`);
+    
+    // 데이터가 없는 국가 우선 처리
+    let totalCollected = 0;
+    let totalSaved = 0;
+    
+    if (emptyCountries.length > 0) {
+      console.log("🚀 데이터가 없는 국가에 집중하여 수집 시작...\n");
+      
+      for (const country of emptyCountries) {
+        console.log(`\n🌍 ${country.name} (${country.code}) - 데이터 없음, 우선 수집\n`);
         
-        try {
-          const result = await collectChannelsForCountryCategory(
-            country.value,
-            country.label,
-            category
-          );
+        for (const category of CATEGORIES) {
+          try {
+            const result = await collectChannelsForCountryCategory(
+              country.code,
+              country.name,
+              category
+            );
+            
+            totalCollected += result.collected;
+            totalSaved += result.saved;
+            
+            await new Promise(resolve => setTimeout(resolve, 300));
+          } catch (error: any) {
+            console.error(`  ❌ 오류: ${category.name}`, error.message);
+          }
           
-          totalCollected += result.collected;
-          totalSaved += result.saved;
+          // 할당량 체크
+          const availableKeys = YOUTUBE_API_KEYS.filter(key => {
+            const used = dailyQuotaUsed.get(key) || 0;
+            return used < QUOTA_LIMIT_PER_KEY;
+          });
           
-          // API 할당량 보호
-          await new Promise(resolve => setTimeout(resolve, 300));
-        } catch (error: any) {
-          console.error(`  ❌ 오류: ${category.name}`, error.message);
+          if (availableKeys.length === 0) {
+            console.log("\n⚠️ 모든 API 키의 할당량이 소진되었습니다.");
+            break;
+          }
         }
         
-        // 할당량 체크
-        const availableKeys = YOUTUBE_API_KEYS.filter(key => {
-          const used = dailyQuotaUsed.get(key) || 0;
-          return used < QUOTA_LIMIT_PER_KEY;
-        });
-        
-        if (availableKeys.length === 0) {
-          console.log("\n⚠️ 모든 API 키의 할당량이 소진되었습니다. 오늘 수집을 중단합니다.");
+        if (exhaustedKeys.size >= YOUTUBE_API_KEYS.length) {
           break;
         }
       }
+    }
+    
+    // 2단계: 데이터가 있는 국가는 신규 채널만 수집 (기존 로직)
+    if (emptyCountries.length === 0 || exhaustedKeys.size < YOUTUBE_API_KEYS.length) {
+      console.log("\n\n📈 데이터가 있는 국가의 신규 채널 수집 시작...\n");
       
-      if (exhaustedKeys.size >= YOUTUBE_API_KEYS.length) {
-        break;
+      let processed = 0;
+      const total = countriesWithData.length * CATEGORIES.length;
+      
+      for (const country of countriesWithData) {
+        console.log(`\n🌍 ${country.name} (${country.code}) - 기존 ${country.count}개 채널\n`);
+        
+        for (const category of CATEGORIES) {
+          processed++;
+          const progress = ((processed / total) * 100).toFixed(1);
+          console.log(`[${progress}%] 진행 중...`);
+          
+          try {
+            const result = await collectChannelsForCountryCategory(
+              country.code,
+              country.name,
+              category
+            );
+            
+            totalCollected += result.collected;
+            totalSaved += result.saved;
+            
+            await new Promise(resolve => setTimeout(resolve, 300));
+          } catch (error: any) {
+            console.error(`  ❌ 오류: ${category.name}`, error.message);
+          }
+          
+          // 할당량 체크
+          const availableKeys = YOUTUBE_API_KEYS.filter(key => {
+            const used = dailyQuotaUsed.get(key) || 0;
+            return used < QUOTA_LIMIT_PER_KEY;
+          });
+          
+          if (availableKeys.length === 0) {
+            console.log("\n⚠️ 모든 API 키의 할당량이 소진되었습니다. 오늘 수집을 중단합니다.");
+            break;
+          }
+        }
+        
+        if (exhaustedKeys.size >= YOUTUBE_API_KEYS.length) {
+          break;
+        }
       }
     }
     
