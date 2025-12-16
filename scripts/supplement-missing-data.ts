@@ -285,8 +285,20 @@ async function supplementCountryCategory(
   console.log(`  📂 ${category.name}: ${currentCount}개 → ${TARGET_PER_CATEGORY}개 목표 (${needToCollect}개 필요)`);
   
   // 구독자 순위가 높은 채널 검색
-  const categoryKeywords = category.keywords || [category.id];
-  const channelIds = await searchTopChannels(countryCode, countryName, categoryKeywords[0], needToCollect * 2);
+  const categoryKeywords: Record<string, string[]> = {
+    entertainment: ["entertainment", "funny", "comedy"],
+    music: ["music", "song", "artist"],
+    education: ["education", "tutorial", "learn"],
+    gaming: ["gaming", "game", "playthrough"],
+    sports: ["sports", "football", "basketball"],
+    news: ["news", "politics", "current events"],
+    people: ["vlog", "lifestyle", "daily"],
+    howto: ["howto", "tutorial", "tips"],
+    other: ["popular", "trending", "top"],
+  };
+  const keywords = categoryKeywords[category.id] || [category.id];
+  const categoryKeyword = keywords[0] || category.id;
+  const channelIds = await searchTopChannels(countryCode, countryName, categoryKeyword, needToCollect * 2);
   
   if (channelIds.length === 0) {
     return 0;

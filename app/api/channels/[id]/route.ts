@@ -94,6 +94,14 @@ export async function GET(
       }
     }
 
+    // 데이터베이스에 없거나 보완 데이터가 필요하면 YouTube API에서 가져오기
+    // UC로 시작하는 채널 ID이거나, 핸들로 검색한 경우 YouTube API 호출
+    const shouldCallYouTubeAPI = (!channel || needsYouTubeData) && (
+      actualChannelId.startsWith("UC") || 
+      params.id.startsWith("@") ||
+      (!channel && params.id.length > 0)
+    );
+
     // 동영상은 항상 YouTube API에서 최신 데이터 가져오기 (저장 없이 바로 표시)
     // 모든 채널에 대해 동영상 가져오기 시도 (UC로 시작하는 채널 ID가 아니어도 시도)
     // 최적화: 채널 정보에서 uploadsPlaylistId를 가져왔다면 전달하여 중복 API 호출 방지
@@ -103,8 +111,6 @@ export async function GET(
         let uploadsPlaylistId: string | undefined;
         if (channel && (channel as any).uploadsPlaylistId) {
           uploadsPlaylistId = (channel as any).uploadsPlaylistId;
-        } else if (shouldCallYouTubeAPI) {
-          // YouTube API에서 채널 정보를 가져올 예정이면, 그때 uploadsPlaylistId를 받아서 사용
         }
         recentVideos = await fetchChannelVideos(channelIdForVideos, 5, YOUTUBE_API_KEY, uploadsPlaylistId);
         
@@ -153,14 +159,6 @@ export async function GET(
         }));
       }
     }
-
-    // 데이터베이스에 없거나 보완 데이터가 필요하면 YouTube API에서 가져오기
-    // UC로 시작하는 채널 ID이거나, 핸들로 검색한 경우 YouTube API 호출
-    const shouldCallYouTubeAPI = (!channel || needsYouTubeData) && (
-      actualChannelId.startsWith("UC") || 
-      params.id.startsWith("@") ||
-      (!channel && params.id.length > 0)
-    );
 
     if (shouldCallYouTubeAPI) {
       const channelIdForAPI = channelIdForVideos;
