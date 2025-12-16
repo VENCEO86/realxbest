@@ -96,9 +96,17 @@ export async function GET(
 
     // 동영상은 항상 YouTube API에서 최신 데이터 가져오기 (저장 없이 바로 표시)
     // 모든 채널에 대해 동영상 가져오기 시도 (UC로 시작하는 채널 ID가 아니어도 시도)
+    // 최적화: 채널 정보에서 uploadsPlaylistId를 가져왔다면 전달하여 중복 API 호출 방지
     if (channelIdForVideos && (channelIdForVideos.startsWith("UC") || channel)) {
       try {
-        recentVideos = await fetchChannelVideos(channelIdForVideos, 5, YOUTUBE_API_KEY);
+        // 채널 정보를 이미 가져왔다면 uploadsPlaylistId 전달 (할당량 절약)
+        let uploadsPlaylistId: string | undefined;
+        if (channel && (channel as any).uploadsPlaylistId) {
+          uploadsPlaylistId = (channel as any).uploadsPlaylistId;
+        } else if (shouldCallYouTubeAPI) {
+          // YouTube API에서 채널 정보를 가져올 예정이면, 그때 uploadsPlaylistId를 받아서 사용
+        }
+        recentVideos = await fetchChannelVideos(channelIdForVideos, 5, YOUTUBE_API_KEY, uploadsPlaylistId);
         
         // API 호출 성공했지만 결과가 없으면 DB에서 가져오기 시도
         if (recentVideos.length === 0 && channel && channel.videos && channel.videos.length > 0) {
