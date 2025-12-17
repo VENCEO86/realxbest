@@ -83,6 +83,10 @@ export async function GET() {
 
 // POST: 메인 페이지 설정 업데이트
 export async function POST(request: NextRequest) {
+  // 변수를 상위 스코프에 선언 (catch 블록에서 사용하기 위해)
+  let title: string | undefined;
+  let description: string | undefined;
+  
   try {
     const authenticated = await isAdminAuthenticated();
     if (!authenticated) {
@@ -90,7 +94,8 @@ export async function POST(request: NextRequest) {
     }
 
     const body = await request.json();
-    const { title, description } = body;
+    title = body.title;
+    description = body.description;
 
     if (!title || !description) {
       return NextResponse.json(
@@ -164,20 +169,22 @@ export async function POST(request: NextRequest) {
     // Prisma 에러 코드별 처리
     if (errorCode === "P2025" || errorMessage.includes("Record to update not found")) {
       // 레코드를 찾을 수 없으면 생성 시도
-      console.log("레코드를 찾을 수 없음. 새로 생성 시도...");
-      try {
-        const newConfig = await prisma.mainPageConfig.create({
-          data: {
-            id: "default",
-            title,
-            description,
-          },
-        });
-        console.log("✅ 새 레코드 생성 성공:", newConfig);
-        return NextResponse.json(newConfig);
-      } catch (createError: any) {
-        console.error("❌ 생성 실패:", createError);
-        userFriendlyMessage = `데이터베이스 오류: ${createError?.message || "레코드를 생성할 수 없습니다"}`;
+      if (title && description) {
+        console.log("레코드를 찾을 수 없음. 새로 생성 시도...");
+        try {
+          const newConfig = await (prisma as any).mainPageConfig?.create({
+            data: {
+              id: "default",
+              title,
+              description,
+            },
+          });
+          console.log("✅ 새 레코드 생성 성공:", newConfig);
+          return NextResponse.json(newConfig);
+        } catch (createError: any) {
+          console.error("❌ 생성 실패:", createError);
+          userFriendlyMessage = `데이터베이스 오류: ${createError?.message || "레코드를 생성할 수 없습니다"}`;
+        }
       }
     } else if (errorCode === "P1001" || errorMessage.includes("Can't reach database server") || errorMessage.includes("connect")) {
       userFriendlyMessage = "데이터베이스 연결 오류입니다. DATABASE_URL을 확인해주세요.";
