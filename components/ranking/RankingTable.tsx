@@ -27,15 +27,18 @@ interface Channel {
   lastUpdated: Date;
 }
 
-async function fetchRankings(params: URLSearchParams, limit: number = 200): Promise<{
+async function fetchRankings(params: URLSearchParams, limit: number = 200, page: number = 1): Promise<{
   channels: Channel[];
   total: number;
 }> {
   try {
-    // limit 파라미터가 없으면 명시적으로 추가 (최소 200개)
+    // limit과 page 파라미터를 명시적으로 추가
     const apiParams = new URLSearchParams(params.toString());
     if (!apiParams.has("limit")) {
       apiParams.set("limit", String(limit));
+    }
+    if (!apiParams.has("page")) {
+      apiParams.set("page", String(page));
     }
     
     const url = `/api/rankings?${apiParams.toString()}`;
@@ -90,8 +93,8 @@ export function RankingTable() {
   );
 
   const { data, isLoading, error, isError } = useQuery({
-    queryKey: ["rankings", searchParams.toString(), limit],
-    queryFn: () => fetchRankings(searchParams, limit),
+    queryKey: ["rankings", searchParams.toString(), limit, page],
+    queryFn: () => fetchRankings(searchParams, limit, page),
     staleTime: 2 * 60 * 1000, // 2분 캐시
     retry: 3, // Render spin down 대응: 재시도 횟수 증가
     retryDelay: (attemptIndex) => Math.min(1000 * 2 ** attemptIndex, 30000), // 지수 백오프 (최대 30초)
