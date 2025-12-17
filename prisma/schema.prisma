@@ -236,3 +236,13 @@ model FaviconConfig {
 
   @@map("favicon_configs")
 }
+
+model MainPageConfig {
+  id          String   @id @default("default")
+  title       String   @default("유튜브 순위 TOP 100")
+  description String   @default("실시간 유튜브 채널 랭킹 및 분석")
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@map("main_page_configs")
+}

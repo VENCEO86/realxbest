@@ -13,8 +13,12 @@ export async function GET(
   { params }: { params: { id: string } }
 ) {
   try {
-    // 캐시 확인
-    const cacheKey = `channel:${params.id}`;
+    // params.id 디코딩 (URL 인코딩된 경우 처리)
+    const decodedId = decodeURIComponent(params.id);
+    console.log(`[Channel API] 요청 받음: 원본=${params.id}, 디코딩=${decodedId}`);
+    
+    // 캐시 확인 (디코딩된 ID 사용)
+    const cacheKey = `channel:${decodedId}`;
     const cached = cache.get(cacheKey);
     if (cached && Date.now() - cached.timestamp < CACHE_TTL) {
       return NextResponse.json(cached.data, {
@@ -27,19 +31,21 @@ export async function GET(
     // 먼저 데이터베이스에서 조회 시도 (ID, channelId, handle 모두 검색)
     let channel = null;
     let needsYouTubeData = false;
-    let actualChannelId = params.id;
+    let actualChannelId = decodedId;
     
     try {
       // 핸들 형식(@zackdfilms)인 경우 @ 제거
-      const searchId = params.id.startsWith('@') ? params.id.substring(1) : params.id;
+      const searchId = decodedId.startsWith('@') ? decodedId.substring(1) : decodedId;
       
       channel = await prisma.youTubeChannel.findFirst({
         where: {
           OR: [
-            { id: params.id },
-            { channelId: params.id },
+            { id: decodedId },
+            { channelId: decodedId },
             { handle: searchId },
-            { handle: params.id },
+            { handle: decodedId },
+            // @ 기호가 포함된 경우도 검색
+            { handle: decodedId.startsWith('@') ? decodedId.substring(1) : decodedId },
           ],
         },
         include: {
@@ -75,10 +81,10 @@ export async function GET(
     let channelIdForVideos = actualChannelId;
     
     // 핸들인 경우 먼저 채널 ID를 찾아야 함
-    if (params.id.startsWith("@") || (!actualChannelId.startsWith("UC") && channel)) {
+    if (decodedId.startsWith("@") || (!actualChannelId.startsWith("UC") && channel)) {
       // YouTube Search API로 채널 ID 찾기
       try {
-        const searchQuery = params.id.startsWith("@") ? params.id.substring(1) : params.id;
+        const searchQuery = decodedId.startsWith("@") ? decodedId.substring(1) : decodedId;
         const searchResponse = await fetch(
           `https://www.googleapis.com/youtube/v3/search?part=snippet&type=channel&q=${encodeURIComponent(searchQuery)}&maxResults=1&key=${YOUTUBE_API_KEY}`
         );
@@ -98,8 +104,8 @@ export async function GET(
     // UC로 시작하는 채널 ID이거나, 핸들로 검색한 경우 YouTube API 호출
     const shouldCallYouTubeAPI = (!channel || needsYouTubeData) && (
       actualChannelId.startsWith("UC") || 
-      params.id.startsWith("@") ||
-      (!channel && params.id.length > 0)
+      decodedId.startsWith("@") ||
+      (!channel && decodedId.length > 0)
     );
 
     // 동영상은 항상 YouTube API에서 최신 데이터 가져오기 (저장 없이 바로 표시)
@@ -323,19 +329,81 @@ export async function GET(
 
     // 채널을 찾지 못한 경우, YouTube API로 직접 조회 시도 (fallback)
     if (!channel) {
-      // params.id가 UC로 시작하는 YouTube Channel ID인 경우 YouTube API 호출
-      if (params.id.startsWith("UC") && params.id.length === 24) {
+      let actualChannelId = params.id;
+      let shouldTryYouTubeAPI = false;
+      
+      // Prisma ID (cuid 형식)인 경우 - DB에서 channelId 찾기 시도
+      if (!decodedId.startsWith("UC") && !decodedId.startsWith("@") && decodedId.length > 0) {
         try {
-          const youtubeData = await fetchChannelFromYouTubeAPI(params.id, YOUTUBE_API_KEY);
+          // Prisma ID로 다시 한번 조회 시도 (channelId만 가져오기)
+          const channelById = await prisma.youTubeChannel.findUnique({
+            where: { id: decodedId },
+            select: { channelId: true },
+          });
+          
+          if (channelById && channelById.channelId) {
+            actualChannelId = channelById.channelId;
+            shouldTryYouTubeAPI = true;
+            console.log(`[Channel API] Prisma ID로 channelId 찾음: ${decodedId} -> ${actualChannelId}`);
+          }
+        } catch (error) {
+          console.error(`[Channel API] Prisma ID 조회 실패 (${decodedId}):`, error);
+        }
+      }
+      
+      // 핸들(@handle) 형식인 경우 YouTube Search API로 채널 ID 찾기
+      if (decodedId.startsWith("@") || (!actualChannelId.startsWith("UC") && decodedId.length > 0 && !shouldTryYouTubeAPI)) {
+        try {
+          const searchQuery = decodedId.startsWith("@") ? decodedId.substring(1) : decodedId;
+          console.log(`[Channel API] YouTube Search API로 채널 검색 시도: ${searchQuery}`);
+          
+          const searchResponse = await fetch(
+            `https://www.googleapis.com/youtube/v3/search?part=snippet&type=channel&q=${encodeURIComponent(searchQuery)}&maxResults=1&key=${YOUTUBE_API_KEY}`
+          );
+          
+          if (searchResponse.ok) {
+            const searchData = await searchResponse.json();
+            if (searchData.items && searchData.items.length > 0) {
+              actualChannelId = searchData.items[0].snippet.channelId;
+              shouldTryYouTubeAPI = true;
+              console.log(`[Channel API] YouTube Search로 channelId 찾음: ${searchQuery} -> ${actualChannelId}`);
+            } else {
+              console.log(`[Channel API] YouTube Search 결과 없음: ${searchQuery}`);
+            }
+          } else {
+            const errorData = await searchResponse.json().catch(() => ({}));
+            console.error(`[Channel API] YouTube Search API 오류 (${searchResponse.status}):`, errorData);
+          }
+        } catch (error) {
+          console.error(`[Channel API] YouTube Search API 실패 (${decodedId}):`, error);
+        }
+      }
+      
+      // YouTube Channel ID 형식인 경우 또는 검색으로 찾은 경우 YouTube API 호출
+      if (shouldTryYouTubeAPI || (actualChannelId.startsWith("UC") && actualChannelId.length === 24)) {
+        try {
+          console.log(`[Channel API] YouTube API로 채널 정보 가져오기 시도: ${actualChannelId}`);
+          const youtubeData = await fetchChannelFromYouTubeAPI(actualChannelId, YOUTUBE_API_KEY);
+          
           if (youtubeData) {
+            console.log(`[Channel API] YouTube API 성공: ${youtubeData.channelName}`);
+            
             // YouTube API에서 가져온 데이터로 채널 정보 구성
             const defaultCategory = await prisma.category.findFirst({
               where: { name: "기타" },
             });
             
+            // 동영상 정보도 가져오기
+            let fallbackVideos: any[] = [];
+            try {
+              fallbackVideos = await fetchChannelVideos(actualChannelId, 5, YOUTUBE_API_KEY, youtubeData.uploadsPlaylistId);
+            } catch (error) {
+              console.error(`[Channel API] 동영상 가져오기 실패 (${actualChannelId}):`, error);
+            }
+            
             channel = {
-              id: params.id, // 임시 ID
-              channelId: youtubeData.channelId || params.id,
+              id: decodedId, // 원본 ID 유지 (Prisma ID일 수 있음)
+              channelId: youtubeData.channelId || actualChannelId,
               channelName: youtubeData.channelName || "Unknown Channel",
               handle: youtubeData.handle || null,
               profileImageUrl: youtubeData.profileImageUrl || null,
@@ -357,20 +425,25 @@ export async function GET(
               rankChange: 0,
               createdAt: new Date(),
               lastUpdated: new Date(),
-              videos: recentVideos || [],
+              videos: fallbackVideos || [],
               growthData: [],
               category: defaultCategory || { id: "", name: "기타", nameEn: "Other", description: null, createdAt: new Date(), updatedAt: new Date() },
             };
+          } else {
+            console.log(`[Channel API] YouTube API 응답 없음: ${actualChannelId}`);
           }
-        } catch (error) {
-          console.error("[Channel API] YouTube API fallback 실패:", error);
+        } catch (error: any) {
+          console.error(`[Channel API] YouTube API fallback 실패 (${actualChannelId}):`, error.message || error);
         }
+      } else {
+        console.log(`[Channel API] YouTube API 호출 조건 불만족: ${params.id} (actualChannelId: ${actualChannelId})`);
       }
       
       // 여전히 채널을 찾지 못한 경우 404 반환
       if (!channel) {
+        console.error(`[Channel API] 최종 실패: 채널을 찾을 수 없음 - ${decodedId} (원본: ${params.id})`);
         return NextResponse.json(
-          { error: "Channel not found", message: `채널을 찾을 수 없습니다: ${params.id}` },
+          { error: "Channel not found", message: `채널을 찾을 수 없습니다: ${decodedId}` },
           { status: 404 }
         );
       }

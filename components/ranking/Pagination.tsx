@@ -50,29 +50,45 @@ export function Pagination({ currentPage, totalItems, itemsPerPage }: Pagination
     return null; // 페이지가 1개 이하면 페이지네이션 숨김
   }
   
+  const startItem = (currentPage - 1) * itemsPerPage + 1;
+  const endItem = Math.min(currentPage * itemsPerPage, totalItems);
+  
   return (
-    <div className="flex flex-col sm:flex-row items-center justify-between gap-4 px-4 py-4 border-t bg-white dark:bg-gray-800">
-      {/* 총 개수 및 페이지 정보 */}
-      <div className="text-sm text-gray-600 dark:text-gray-400">
-        <span className="font-medium text-gray-900 dark:text-white">
-          {((currentPage - 1) * itemsPerPage + 1).toLocaleString()}
-        </span>
-        {"-"}
-        <span className="font-medium text-gray-900 dark:text-white">
-          {Math.min(currentPage * itemsPerPage, totalItems).toLocaleString()}
-        </span>
-        {" / "}
-        <span className="font-medium text-gray-900 dark:text-white">
+    <div className="flex flex-col sm:flex-row items-center justify-between gap-3 sm:gap-4 px-4 py-3 sm:py-4 border-t bg-white dark:bg-gray-800">
+      {/* 총 개수 및 페이지 정보 - 숫자 위주 깔끔한 디자인 */}
+      <div className="flex items-baseline gap-1.5 sm:gap-2 text-xs sm:text-sm">
+        {/* 범위 표시 */}
+        <div className="flex items-baseline gap-1">
+          <span className="font-bold text-gray-900 dark:text-white text-sm sm:text-base">
+            {startItem.toLocaleString()}
+          </span>
+          <span className="text-gray-500 dark:text-gray-400 font-normal">-</span>
+          <span className="font-bold text-gray-900 dark:text-white text-sm sm:text-base">
+            {endItem.toLocaleString()}
+          </span>
+        </div>
+        
+        {/* 구분자 */}
+        <span className="text-gray-400 dark:text-gray-500 font-light">/</span>
+        
+        {/* 전체 개수 */}
+        <span className="font-semibold text-gray-700 dark:text-gray-300 text-sm sm:text-base">
           {totalItems.toLocaleString()}
         </span>
-        {" · "}
-        <span className="font-medium text-gray-900 dark:text-white">
-          {currentPage}
-        </span>
-        {"/"}
-        <span className="font-medium text-gray-900 dark:text-white">
-          {totalPages}
-        </span>
+        
+        {/* 구분자 */}
+        <span className="text-gray-400 dark:text-gray-500 mx-0.5">·</span>
+        
+        {/* 페이지 정보 */}
+        <div className="flex items-baseline gap-1">
+          <span className="font-bold text-blue-600 dark:text-blue-400 text-sm sm:text-base">
+            {currentPage}
+          </span>
+          <span className="text-gray-400 dark:text-gray-500 font-light">/</span>
+          <span className="font-semibold text-gray-600 dark:text-gray-400 text-sm sm:text-base">
+            {totalPages}
+          </span>
+        </div>
       </div>
       
       {/* 페이지네이션 버튼 */}

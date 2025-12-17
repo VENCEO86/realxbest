@@ -12,6 +12,7 @@ export function AdminNav() {
     { href: "/admin/pixels", label: "픽셀관리" },
     { href: "/admin/favicon", label: "파비콘관리" },
     { href: "/admin/seo", label: "SEO관리" },
+    { href: "/admin/main-page", label: "메인페이지설정" },
   ];
 
   return (

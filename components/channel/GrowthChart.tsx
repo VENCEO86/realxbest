@@ -177,8 +177,9 @@ export function GrowthChart({ growthData }: { growthData: GrowthData[] }) {
         </div>
       </div>
       
-      {/* 차트 섹션 - 깔끔한 디자인 */}
-      <ResponsiveContainer width="100%" height={400}>
+      {/* 차트 섹션 - 깔끔한 디자인 (모바일 최적화) */}
+      <div className="w-full h-[250px] sm:h-[300px] md:h-[400px]">
+        <ResponsiveContainer width="100%" height="100%">
         <LineChart 
           data={chartData} 
           margin={{ top: 10, right: 25, left: 5, bottom: 10 }}
@@ -268,6 +269,7 @@ export function GrowthChart({ growthData }: { growthData: GrowthData[] }) {
           />
         </LineChart>
       </ResponsiveContainer>
+      </div>
     </div>
   );
 }
