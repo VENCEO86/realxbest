@@ -36,6 +36,9 @@ export async function GET() {
         createdAt: {
           gte: oneDayAgo,
         },
+        country: {
+          not: null,
+        },
       },
       _count: {
         id: true,
@@ -125,7 +128,9 @@ export async function GET() {
         channelName: channel.channelName,
         country: channel.country || '미지정',
         category: channel.category?.name || '미지정',
-        subscribers: Number(channel.subscriberCount),
+        subscribers: typeof channel.subscriberCount === 'bigint' 
+          ? Number(channel.subscriberCount) 
+          : Number(channel.subscriberCount || 0),
         createdAt: channel.createdAt.toISOString(),
       })),
     });
