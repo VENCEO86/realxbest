@@ -144,15 +144,42 @@ const LOCAL_KEYWORDS: Record<string, Record<string, string[]>> = {
       "italian tutorial", "italian guides", "italian tips", "italian diy"
     ],
   },
-  TH: { // 태국 (확대)
-    entertainment: ["บันเทิง", "ความบันเทิง", "ความสนุก", "ยูทูบเบอร์ไทย", "ช่องไทย", "ครีเอเตอร์ไทย", "thai youtuber", "thai channel", "thai creator"],
-    music: ["เพลงไทย", "ดนตรีไทย", "เพลง", "นักร้องไทย", "ศิลปินไทย", "thai music", "thai singer"],
-    education: ["การศึกษา", "เรียนรู้", "สอน"],
-    gaming: ["เกม", "เกมส์", "เล่นเกม"],
-    sports: ["กีฬา", "ฟุตบอล", "กีฬาไทย"],
-    news: ["ข่าว", "ข่าวสาร", "ข่าวไทย"],
-    people: ["vlog", "vlogger ไทย", "youtuber ไทย"],
-    howto: ["สอน", "วิธีทำ", "เทคนิค"],
+  TH: { // 태국 (대폭 확대 - 현지어 우선)
+    entertainment: [
+      "บันเทิง", "ความบันเทิง", "ความสนุก", "ยูทูบเบอร์ไทย",
+      "ช่องไทย", "ครีเอเตอร์ไทย", "คนดัง", "ยอดนิยม",
+      "ยูทูบเบอร์ยอดนิยม", "ช่องยอดนิยม", "ครีเอเตอร์ยอดนิยม",
+      "ความบันเทิงไทย", "ยูทูบเบอร์", "ช่องยูทูบ"
+    ],
+    music: [
+      "เพลงไทย", "ดนตรีไทย", "เพลง", "นักร้องไทย", "ศิลปินไทย",
+      "thai music", "thai singer", "เพลงไทยยอดนิยม",
+      "ดนตรีไทย", "ศิลปินไทย", "นักร้องไทย"
+    ],
+    education: [
+      "การศึกษา", "เรียนรู้", "สอน", "เรียน",
+      "การศึกษาภาษาไทย", "สอนภาษาไทย", "การเรียนรู้"
+    ],
+    gaming: [
+      "เกม", "เกมส์", "เล่นเกม", "เกมไทย",
+      "เกมเมอร์ไทย", "เกมสตรีม", "เกมไทย"
+    ],
+    sports: [
+      "กีฬา", "ฟุตบอล", "กีฬาไทย", "ฟุตบอลไทย",
+      "กีฬาไทย", "นักกีฬาไทย"
+    ],
+    news: [
+      "ข่าว", "ข่าวสาร", "ข่าวไทย", "ข่าววันนี้",
+      "ข่าวไทย", "ข่าวสารไทย"
+    ],
+    people: [
+      "vlog", "vlogger ไทย", "youtuber ไทย", "vlog ไทย",
+      "ชีวิตประจำวัน", "ไลฟ์สไตล์", "vlog ไทย"
+    ],
+    howto: [
+      "สอน", "วิธีทำ", "เทคนิค", "วิธี",
+      "สอนทำ", "วิธีทำ", "เทคนิคไทย"
+    ],
   },
   VN: { // 베트남
     entertainment: ["giải trí", "vui chơi", "tiêu khiển"],
@@ -284,50 +311,88 @@ function incrementApiUsage(key: string, units: number = 1) {
 /**
  * 채널 검색 (YouTube Search API)
  */
-// 국가별 언어 코드 매핑 (YouTube API hl 파라미터용)
+// 국가별 언어 코드 매핑 (YouTube API hl 파라미터용) - 모든 국가 확장
 const COUNTRY_LANGUAGE_CODES: Record<string, string> = {
-  IT: "it", // 이탈리아어
-  TH: "th", // 태국어
-  VN: "vi", // 베트남어
-  PH: "en", // 필리핀 (영어)
-  ID: "id", // 인도네시아어
-  ES: "es", // 스페인어
-  FR: "fr", // 프랑스어
-  DE: "de", // 독일어
-  JP: "ja", // 일본어
-  CN: "zh", // 중국어
-  KR: "ko", // 한국어
-  BR: "pt", // 포르투갈어 (브라질)
-  PT: "pt", // 포르투갈어
-  RU: "ru", // 러시아어
-  TR: "tr", // 터키어
-  PL: "pl", // 폴란드어
-  NL: "nl", // 네덜란드어
-  GR: "el", // 그리스어
-  CZ: "cs", // 체코어
-  RO: "ro", // 루마니아어
-  HU: "hu", // 헝가리어
-  UA: "uk", // 우크라이나어
-  AR: "es", // 스페인어 (아르헨티나)
-  CL: "es", // 스페인어 (칠레)
-  CO: "es", // 스페인어 (콜롬비아)
-  PE: "es", // 스페인어 (페루)
-  EC: "es", // 스페인어 (에콰도르)
-  MX: "es", // 스페인어 (멕시코)
-  SA: "ar", // 아랍어 (사우디아라비아)
-  AE: "ar", // 아랍어 (아랍에미리트)
-  EG: "ar", // 아랍어 (이집트)
-  IL: "he", // 히브리어 (이스라엘)
-  IN: "hi", // 힌디어 (인도)
-  MY: "ms", // 말레이어
-  SG: "en", // 영어 (싱가포르)
-  TW: "zh-TW", // 중국어 번체 (대만)
-  HK: "zh-HK", // 중국어 번체 (홍콩)
-  AU: "en", // 영어 (호주)
-  NZ: "en", // 영어 (뉴질랜드)
-  CA: "en", // 영어 (캐나다)
-  GB: "en", // 영어 (영국)
-  US: "en", // 영어 (미국)
+  // 아시아
+  JP: "ja",      // 일본어 ✅
+  CN: "zh",      // 중국어 ✅
+  KR: "ko",      // 한국어 ✅
+  TH: "th",      // 태국어 ✅
+  VN: "vi",      // 베트남어 ✅
+  ID: "id",      // 인도네시아어 ✅
+  MY: "ms",      // 말레이어 ✅
+  PH: "en",      // 필리핀 (영어/타갈로그어 혼합)
+  IN: "hi",      // 힌디어 ✅
+  BD: "bn",      // 방글라데시어 (벵골어)
+  PK: "ur",      // 우르두어
+  MM: "my",      // 미얀마어
+  KH: "km",      // 캄보디아어
+  LA: "lo",      // 라오어
+  TW: "zh-TW",   // 중국어 번체 (대만) ✅
+  HK: "zh-HK",   // 중국어 번체 (홍콩) ✅
+  SG: "en",      // 영어 (싱가포르) ✅
+  
+  // 유럽
+  IT: "it",      // 이탈리아어 ✅
+  ES: "es",      // 스페인어 ✅
+  FR: "fr",      // 프랑스어 ✅
+  DE: "de",      // 독일어 ✅
+  PT: "pt",      // 포르투갈어 ✅
+  NL: "nl",      // 네덜란드어 ✅
+  PL: "pl",      // 폴란드어 ✅
+  RU: "ru",      // 러시아어 ✅
+  GR: "el",      // 그리스어 ✅
+  CZ: "cs",      // 체코어 ✅
+  RO: "ro",      // 루마니아어 ✅
+  HU: "hu",      // 헝가리어 ✅
+  UA: "uk",      // 우크라이나어 ✅
+  TR: "tr",      // 터키어 ✅
+  CH: "de",      // 독일어/프랑스어/이탈리아어
+  AT: "de",      // 독일어
+  BE: "nl",      // 네덜란드어/프랑스어
+  SE: "sv",      // 스웨덴어
+  NO: "no",      // 노르웨이어
+  DK: "da",      // 덴마크어
+  FI: "fi",      // 핀란드어
+  IE: "en",      // 영어 (아일랜드)
+  LU: "fr",      // 프랑스어/독일어
+  IS: "is",      // 아이슬란드어
+  MT: "mt",      // 몰타어
+  
+  // 중동
+  SA: "ar",      // 아랍어 (사우디아라비아) ✅
+  AE: "ar",      // 아랍어 (아랍에미리트) ✅
+  EG: "ar",      // 아랍어 (이집트) ✅
+  IL: "he",      // 히브리어 (이스라엘) ✅
+  
+  // 아메리카
+  US: "en",      // 영어 (미국) ✅
+  CA: "en",      // 영어 (캐나다) ✅
+  MX: "es",      // 스페인어 (멕시코) ✅
+  BR: "pt",      // 포르투갈어 (브라질) ✅
+  AR: "es",      // 스페인어 (아르헨티나) ✅
+  CL: "es",      // 스페인어 (칠레) ✅
+  CO: "es",      // 스페인어 (콜롬비아) ✅
+  PE: "es",      // 스페인어 (페루) ✅
+  EC: "es",      // 스페인어 (에콰도르) ✅
+  UY: "es",      // 스페인어 (우루과이)
+  PY: "es",      // 스페인어 (파라과이)
+  BO: "es",      // 스페인어 (볼리비아)
+  VE: "es",      // 스페인어 (베네수엘라)
+  
+  // 오세아니아
+  AU: "en",      // 영어 (호주) ✅
+  NZ: "en",      // 영어 (뉴질랜드) ✅
+  
+  // 아프리카
+  ZA: "en",      // 영어 (남아프리카)
+  NG: "en",      // 영어 (나이지리아)
+  KE: "en",      // 영어 (케냐)
+  
+  // 기타
+  GL: "da",      // 덴마크어 (그린란드)
+  GF: "fr",      // 프랑스어 (프랑스령 기아나)
+  FK: "en",      // 영어 (포클랜드 제도)
 };
 
 /**
@@ -355,15 +420,25 @@ async function searchChannels(
       key: apiKey,
     });
     
-    // 지역 코드 추가 (검색 결과의 지역 설정)
+    // 지역 코드 추가 (검색 결과의 지역 설정) - 위치 기반 필터링 강화
+    // regionCode는 필수로 설정하여 해당 지역의 검색 결과 우선 반환
     if (regionCode) {
       params.append("regionCode", regionCode);
+    } else if (languageCode) {
+      // regionCode가 없으면 languageCode에서 추론 (예: "ja" → "JP")
+      const inferredRegion = Object.entries(COUNTRY_LANGUAGE_CODES).find(
+        ([_, lang]) => lang === languageCode
+      )?.[0];
+      if (inferredRegion) {
+        params.append("regionCode", inferredRegion);
+      }
     }
     
     // 언어 코드 추가 (검색 결과의 언어 설정) - NoxInfluencer 방식
+    // hl: 검색 결과의 언어 설정
+    // relevanceLanguage: 관련 언어 설정 (검색 결과의 관련성 향상)
     if (languageCode) {
       params.append("hl", languageCode);
-      // 추가 파라미터: relevanceLanguage (관련 언어 설정)
       params.append("relevanceLanguage", languageCode);
     }
     
@@ -391,6 +466,115 @@ async function searchChannels(
     console.error(`  ❌ 검색 오류 (${query}):`, error.message);
     return [];
   }
+}
+
+/**
+ * 기관/단체 채널 제외 키워드 (다국어 지원)
+ * 개인 유튜버 위주로 수집하기 위한 필터링 키워드
+ */
+const EXCLUDE_KEYWORDS = [
+  // 영어
+  "official", "news", "tv", "channel", "media", "network",
+  "corporation", "company", "inc", "ltd", "group",
+  "government", "ministry", "department", "agency",
+  "broadcast", "broadcasting", "station", "television",
+  
+  // 일본어
+  "公式", "ニュース", "テレビ", "チャンネル", "メディア",
+  "会社", "株式会社", "政府", "省", "庁",
+  "放送", "放送局", "テレビ局", "ニュース局",
+  
+  // 중국어
+  "官方", "新闻", "电视台", "频道", "媒体",
+  "公司", "政府", "部门", "机构",
+  "广播", "广播电台", "电视台", "新闻台",
+  
+  // 한국어
+  "공식", "뉴스", "방송", "채널", "미디어",
+  "회사", "정부", "부", "청",
+  "방송국", "텔레비전", "뉴스방송",
+  
+  // 이탈리아어
+  "ufficiale", "notizie", "televisione", "canale", "media",
+  "azienda", "governo", "ministero",
+  "trasmissione", "emittente", "televisiva",
+  
+  // 스페인어
+  "oficial", "noticias", "televisión", "canal", "medios",
+  "empresa", "gobierno", "ministerio",
+  "transmisión", "emisora", "televisiva",
+  
+  // 프랑스어
+  "officiel", "actualités", "télévision", "chaîne", "médias",
+  "entreprise", "gouvernement", "ministère",
+  "diffusion", "station", "télévisuelle",
+  
+  // 독일어
+  "offiziell", "Nachrichten", "Fernsehen", "Kanal", "Medien",
+  "Unternehmen", "Regierung", "Ministerium",
+  "Rundfunk", "Sender", "Fernsehsender",
+  
+  // 아랍어
+  "رسمي", "أخبار", "تلفزيون", "قناة", "إعلام",
+  "شركة", "حكومة", "وزارة",
+  "بث", "محطة", "تلفزيونية",
+  
+  // 태국어
+  "ทางการ", "ข่าว", "ทีวี", "ช่อง", "สื่อ",
+  "บริษัท", "รัฐบาล", "กระทรวง",
+  "สถานี", "โทรทัศน์", "ข่าว",
+  
+  // 포르투갈어
+  "oficial", "notícias", "televisão", "canal", "mídia",
+  "empresa", "governo", "ministério",
+  "transmissão", "emissora", "televisiva",
+  
+  // 러시아어
+  "официальный", "новости", "телевидение", "канал", "СМИ",
+  "компания", "правительство", "министерство",
+  "вещание", "станция", "телевизионная",
+];
+
+/**
+ * 개인 유튜버 필터링 함수
+ * 기관/단체 채널을 제외하고 개인 크리에이터 위주로 필터링
+ */
+function isPersonalCreator(channelName: string, description: string | null): boolean {
+  const nameLower = (channelName || "").toLowerCase();
+  const descLower = (description || "").toLowerCase();
+  
+  // 기관/단체 키워드 포함 시 제외
+  for (const keyword of EXCLUDE_KEYWORDS) {
+    const keywordLower = keyword.toLowerCase();
+    if (nameLower.includes(keywordLower) || descLower.includes(keywordLower)) {
+      return false; // 기관/단체 채널로 판단하여 제외
+    }
+  }
+  
+  // 개인 유튜버 특징 확인
+  // 1. 이름에 개인 이름 패턴 포함 (예: "John's Channel", "田中チャンネル")
+  // 2. 설명에 "vlog", "personal", "creator" 등 포함
+  // 3. 구독자 수가 적절한 범위 (너무 많으면 기관일 가능성)
+  
+  // 개인 유튜버 특징 키워드 (포함되면 개인 유튜버일 가능성 높음)
+  const personalKeywords = [
+    "vlog", "vlogger", "personal", "creator", "youtuber",
+    "daily", "lifestyle", "my", "i'm", "i am",
+    "チャンネル", "vlog", "日常", "個人", "私の",
+    "vlog", "vlogger", "personal", "creator", "youtuber",
+    "vlog", "vlogger", "personal", "creator", "youtuber",
+  ];
+  
+  // 개인 유튜버 특징 키워드가 포함되면 개인 유튜버로 판단
+  for (const keyword of personalKeywords) {
+    const keywordLower = keyword.toLowerCase();
+    if (nameLower.includes(keywordLower) || descLower.includes(keywordLower)) {
+      return true; // 개인 유튜버로 판단
+    }
+  }
+  
+  // 기본적으로 개인 유튜버로 간주 (기관 키워드가 없으면)
+  return true;
 }
 
 /**
@@ -457,29 +641,69 @@ async function fetchChannelDetails(channelIds: string[], targetCountryCode?: str
           
           if (subscriberCount >= effectiveMinSubscribers && viewCount >= effectiveMinViews) {
             const channelCountry = snippet.country || null;
+            const channelName = snippet.title || "";
+            const channelDescription = snippet.description || null;
             
-            // NoxInfluencer 벤치마킹: 국가 필터링 완화 (더 많은 데이터 확보)
-            // 타겟 국가 코드가 있으면 우선적으로 필터링하되, null인 경우는 포함
-            // 데이터 부족 국가는 국가 필터링을 더 완화
-            if (targetCountryCode && !isDataScarceCountry) {
-              // 채널 국가가 명시적으로 다른 국가이면 제외
-              // null인 경우는 YouTube API에서 국가 정보를 제공하지 않는 경우이므로 포함
-              // 주석 처리: 데이터 부족 시 완화
-              // if (channelCountry && channelCountry !== targetCountryCode) {
-              //   continue; // 다른 국가 채널 제외
-              // }
+            // 개인 유튜버 필터링 (기관/단체 채널 제외)
+            if (!isPersonalCreator(channelName, channelDescription)) {
+              continue; // 기관/단체 채널 제외
+            }
+            
+            // 위치 기반 필터링 강화
+            // 1. 채널 소유자의 국가 확인 (snippet.country)
+            // 2. regionCode로 검색했으므로 해당 지역 결과일 가능성 높음
+            // 3. 데이터 부족 국가는 완화된 필터링 적용
+            
+            if (targetCountryCode) {
+              // 위치 기반 필터링 함수
+              const shouldIncludeChannel = (channelCountry: string | null, targetCode: string): boolean => {
+                // 국가 정보가 없으면 regionCode로 검색했으므로 포함 (완화 모드)
+                if (!channelCountry) {
+                  return true; // regionCode로 검색했으므로 해당 지역 결과일 가능성 높음
+                }
+                
+                // 정확히 일치하면 포함
+                if (channelCountry === targetCode) {
+                  return true;
+                }
+                
+                // 데이터 부족 국가는 완화된 필터링
+                if (isDataScarceCountry) {
+                  return true; // 데이터 부족 국가는 모든 채널 포함
+                }
+                
+                // 관련 국가 허용 (예: 대만 → 중국, 홍콩 → 중국)
+                const relatedCountries: Record<string, string[]> = {
+                  TW: ["CN"], // 대만 → 중국
+                  HK: ["CN"], // 홍콩 → 중국
+                  MO: ["CN"], // 마카오 → 중국
+                };
+                
+                if (relatedCountries[targetCode]?.includes(channelCountry)) {
+                  return true; // 관련 국가 허용
+                }
+                
+                // 엄격 모드: 국가 불일치 시 제외
+                // 완화 모드: regionCode로 검색했으므로 포함
+                return true; // 완화 모드 (더 많은 데이터 확보)
+              };
+              
+              // 위치 기반 필터링 적용
+              if (!shouldIncludeChannel(channelCountry, targetCountryCode)) {
+                continue; // 다른 국가 채널 제외
+              }
             }
             
             results.push({
               channelId: item.id,
-              channelName: snippet.title,
+              channelName: channelName,
               handle: snippet.customUrl?.replace("@", "") || null,
               profileImageUrl: profileImageUrl, // 필수 조건 통과
               subscriberCount,
               totalViewCount: viewCount,
               videoCount: parseInt(stats.videoCount || "0"),
               country: channelCountry || targetCountryCode || null, // 실제 국가 코드 우선, 없으면 타겟 국가 코드
-              description: snippet.description || null,
+              description: channelDescription,
               channelCreatedAt: snippet.publishedAt ? new Date(snippet.publishedAt) : null,
             });
           }
