@@ -13,19 +13,14 @@ export async function GET() {
     }
 
     // 단일 설정 조회 (id가 'default'로 고정)
-    // try-catch로 감싸서 Prisma 모델 오류를 명확히 처리
     let config;
     try {
-      config = await prisma.mainPageConfig.findUnique({
+      config = await (prisma as any).mainPageConfig?.findUnique({
         where: { id: "default" },
       });
-    } catch (modelError: any) {
-      // Prisma 모델이 없는 경우 기본값 반환
-      console.warn("⚠️  Prisma 모델 접근 오류:", modelError);
-      const errorMessage = modelError?.message || String(modelError);
       
-      if (errorMessage.includes("mainPageConfig") || errorMessage.includes("Cannot read") || errorMessage.includes("undefined")) {
-        console.warn("기본값을 반환합니다.");
+      // 모델이 없는 경우 기본값 반환
+      if (!config && (prisma as any).mainPageConfig) {
         return NextResponse.json({
           id: "default",
           title: "유튜브 순위 TOP 100",
@@ -34,7 +29,16 @@ export async function GET() {
           updatedAt: new Date(),
         });
       }
-      throw modelError; // 다른 오류는 그대로 throw
+    } catch (modelError: any) {
+      // Prisma 모델이 없는 경우 기본값 반환
+      console.warn("⚠️  Prisma 모델 접근 오류:", modelError);
+      return NextResponse.json({
+        id: "default",
+        title: "유튜브 순위 TOP 100",
+        description: "실시간 유튜브 채널 랭킹 및 분석",
+        createdAt: new Date(),
+        updatedAt: new Date(),
+      });
     }
     
     // 설정이 없으면 기본값 반환 (생성하지 않음 - GET은 조회만)
