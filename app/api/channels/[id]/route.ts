@@ -321,11 +321,59 @@ export async function GET(
       }
     }
 
+    // 채널을 찾지 못한 경우, YouTube API로 직접 조회 시도 (fallback)
     if (!channel) {
-      return NextResponse.json(
-        { error: "Channel not found" },
-        { status: 404 }
-      );
+      // params.id가 UC로 시작하는 YouTube Channel ID인 경우 YouTube API 호출
+      if (params.id.startsWith("UC") && params.id.length === 24) {
+        try {
+          const youtubeData = await fetchChannelFromYouTubeAPI(params.id, YOUTUBE_API_KEY);
+          if (youtubeData) {
+            // YouTube API에서 가져온 데이터로 채널 정보 구성
+            const defaultCategory = await prisma.category.findFirst({
+              where: { name: "기타" },
+            });
+            
+            channel = {
+              id: params.id, // 임시 ID
+              channelId: youtubeData.channelId || params.id,
+              channelName: youtubeData.channelName || "Unknown Channel",
+              handle: youtubeData.handle || null,
+              profileImageUrl: youtubeData.profileImageUrl || null,
+              subscriberCount: BigInt(youtubeData.subscriberCount || 0),
+              totalViewCount: BigInt(youtubeData.totalViewCount || 0),
+              videoCount: youtubeData.videoCount || 0,
+              country: youtubeData.country || null,
+              description: youtubeData.description || null,
+              channelCreatedAt: youtubeData.channelCreatedAt || null,
+              categoryId: defaultCategory?.id || "",
+              weeklySubscriberChange: BigInt(0),
+              weeklySubscriberChangeRate: 0,
+              weeklyViewCount: BigInt(0),
+              weeklyViewCountChange: BigInt(0),
+              weeklyViewCountChangeRate: 0,
+              averageEngagementRate: 0,
+              currentRank: null,
+              previousRank: null,
+              rankChange: 0,
+              createdAt: new Date(),
+              lastUpdated: new Date(),
+              videos: recentVideos || [],
+              growthData: [],
+              category: defaultCategory || { id: "", name: "기타", nameEn: "Other", description: null, createdAt: new Date(), updatedAt: new Date() },
+            };
+          }
+        } catch (error) {
+          console.error("[Channel API] YouTube API fallback 실패:", error);
+        }
+      }
+      
+      // 여전히 채널을 찾지 못한 경우 404 반환
+      if (!channel) {
+        return NextResponse.json(
+          { error: "Channel not found", message: `채널을 찾을 수 없습니다: ${params.id}` },
+          { status: 404 }
+        );
+      }
     }
 
     // 데이터베이스에 채널이 있지만 growthData나 videos가 없을 때 최소한의 데이터 생성
