@@ -31,7 +31,7 @@ COPY --from=deps /app/node_modules ./node_modules
 COPY next.config.mjs ./
 COPY tsconfig.json ./
 COPY tailwind.config.ts ./
-COPY postcss.config.js ./
+COPY postcss.config.mjs ./
 COPY prisma ./prisma
 
 # Prisma 클라이언트 생성 (스키마 변경 시에만 재실행)
