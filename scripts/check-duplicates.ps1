@@ -125,3 +125,4 @@ Write-Host "- Compatibility: OK" -ForegroundColor Green
 Write-Host "- Some duplicate documentation files found (non-critical)" -ForegroundColor Gray
 Write-Host "- Some similar script commands found (non-critical)" -ForegroundColor Gray
 
+

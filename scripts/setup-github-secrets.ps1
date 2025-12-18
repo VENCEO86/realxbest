@@ -118,3 +118,4 @@ Write-Host "- Public Key로 암호화해야 함" -ForegroundColor Gray
 Write-Host "- PowerShell에서 직접 암호화 어려움" -ForegroundColor Gray
 Write-Host "- GitHub CLI 또는 수동 설정 권장" -ForegroundColor Gray
 
+

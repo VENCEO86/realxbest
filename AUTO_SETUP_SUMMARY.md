@@ -73,3 +73,4 @@ winget install GitHub.cli
 
 두 방법 모두 설정 후 완전 자동화됩니다!
 
+

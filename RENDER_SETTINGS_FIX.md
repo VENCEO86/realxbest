@@ -57,3 +57,4 @@ Render 서비스가 PHP 시작 명령을 찾고 있습니다:
 - ✅ Dockerfile의 CMD가 올바른지 (`node server.js`)
 - ✅ Start Command가 비어있는지
 
+

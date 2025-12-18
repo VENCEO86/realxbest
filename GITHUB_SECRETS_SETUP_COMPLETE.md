@@ -92,3 +92,4 @@ gh secret list --repo VENCEO86/realxbest
 - Internal Connection String은 Render 내부에서만 사용 가능하므로 GitHub Actions에서는 사용할 수 없습니다
 - Secrets 설정 후 Actions 워크플로우가 자동으로 실행됩니다
 
+

@@ -92,3 +92,4 @@ Write-Host "   https://github.com/$Repository/actions" -ForegroundColor Cyan
 Write-Host "2. 'Daily Channel Collection' > 'Run workflow' 클릭" -ForegroundColor White
 Write-Host "3. 성공하면 자동화 완료!" -ForegroundColor White
 
+

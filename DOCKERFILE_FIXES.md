@@ -24,3 +24,4 @@
 - `npm install -g npm@latest` 추가
 - Prisma generate 에러 핸들링 개선
 
+

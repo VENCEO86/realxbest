@@ -47,3 +47,4 @@ Write-Host "  1. https://realxbest.com 접속" -ForegroundColor White
 Write-Host "  2. https://realxbest.com/api/rankings API 테스트" -ForegroundColor White
 Write-Host "========================================`n" -ForegroundColor Cyan
 
+

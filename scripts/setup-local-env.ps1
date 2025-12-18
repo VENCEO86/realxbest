@@ -104,3 +104,4 @@ Write-Host "   1. 데이터베이스 연결 테스트: npm run check-db" -Foregr
 Write-Host "   2. 데이터 수집 실행: npm run collect:daily" -ForegroundColor Gray
 Write-Host ""
 
+

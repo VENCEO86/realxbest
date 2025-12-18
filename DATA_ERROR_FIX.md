@@ -135,3 +135,4 @@ curl https://realxbest.com/api/rankings | jq '.channels[0]'
 - 스프레드 연산자(`...channel`)를 사용하면 필드명이 그대로 전달되어 문제가 발생할 수 있습니다
 - 필드가 없을 경우를 대비해 기본값(`|| ""`)을 설정했습니다
 
+

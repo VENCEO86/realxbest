@@ -142,3 +142,4 @@
    - 데이터베이스 연결 실패 → DATABASE_URL 확인
    - 의존성 설치 실패 → package.json 확인
 
+

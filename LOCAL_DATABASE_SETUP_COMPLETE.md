@@ -70,3 +70,4 @@ git push origin main
 - 수집 스크립트를 다시 실행
 - GitHub Actions에서 자동 수집 확인
 
+

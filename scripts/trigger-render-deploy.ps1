@@ -76,3 +76,4 @@ Write-Host "1. Render 대시보드에서 배포 로그 확인" -ForegroundColor 
 Write-Host "2. https://realxbest.com 접속하여 사이트 확인" -ForegroundColor Gray
 Write-Host "3. https://realxbest.com/api/rankings API 테스트" -ForegroundColor Gray
 
+

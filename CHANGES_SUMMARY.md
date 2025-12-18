@@ -63,3 +63,4 @@ npm run collect:daily
 - 수집 시간 증가 가능
 - 데이터베이스 저장 공간 확인 필요
 
+

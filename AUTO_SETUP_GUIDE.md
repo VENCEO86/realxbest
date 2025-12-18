@@ -117,3 +117,4 @@ gh secret set YOUTUBE_API_KEYS --repo VENCEO86/realxbest --body "your-api-keys"
 
 두 방법 모두 약 2-3분 소요되며, 설정 후 완전 자동화됩니다!
 
+

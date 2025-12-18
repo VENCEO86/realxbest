@@ -94,3 +94,4 @@ Render 대시보드에서 다음을 확인하세요:
 - Dockerfile의 `CMD ["node", "server.js"]`가 자동으로 사용됩니다
 - PHP 관련 설정이 하나라도 남아있으면 오류가 발생합니다
 
+

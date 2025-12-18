@@ -57,3 +57,4 @@ Write-Host "  - Secrets가 설정되어 있으면 Actions 탭에서 워크플로
 Write-Host "  - 수동 실행(Run workflow)으로 즉시 테스트 가능합니다" -ForegroundColor Gray
 Write-Host "  - 실행 로그에서 오류 메시지를 확인할 수 있습니다" -ForegroundColor Gray
 
+

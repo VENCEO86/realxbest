@@ -79,3 +79,4 @@ if (channelIdForVideos.startsWith("UC") || channel) {
 - 다만, 에러 처리와 조건문을 개선하여 API 호출이 제대로 이루어지도록 해야 함
 - 필요 시 나중에 DB 캐싱을 추가할 수 있음
 
+

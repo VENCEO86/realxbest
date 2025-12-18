@@ -56,3 +56,4 @@ npm run collect:daily # 수집 시작
 - ⚠️ Render Cron Job: 생성 필요
 - ✅ 수동 실행: 가능
 
+

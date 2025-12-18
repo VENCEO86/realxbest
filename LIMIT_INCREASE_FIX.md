@@ -126,3 +126,4 @@ curl "https://realxbest.com/api/rankings?category=엔터테인먼트&limit=500"
 - 광고 삽입을 위해 충분한 데이터 풀 확보
 - 필요시 추가 최적화 가능
 
+

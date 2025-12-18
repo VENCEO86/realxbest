@@ -38,3 +38,4 @@
 - `DATABASE_URL` 존재 확인
 - `YOUTUBE_API_KEYS` 존재 확인
 
+

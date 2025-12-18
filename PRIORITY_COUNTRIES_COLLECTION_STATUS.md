@@ -72,3 +72,4 @@ export YOUTUBE_API_KEYS="key1,key2,key3"
 npx tsx scripts/collect-priority-countries.ts
 ```
 
+

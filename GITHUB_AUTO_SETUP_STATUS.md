@@ -54,3 +54,4 @@ Render 대시보드에서 가져와야 합니다:
 - 로그인 후 자동으로 Secrets 설정이 진행됩니다
 - DATABASE_URL은 Render에서 복사해서 입력해야 합니다
 
+

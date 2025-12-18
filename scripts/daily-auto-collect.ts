@@ -25,74 +25,60 @@ const QUOTA_LIMIT_PER_KEY = 9000; // 키당 일일 할당량 (안전 마진)
 // NoxInfluencer 벤치마킹 목표 설정 (데이터 확보 우선)
 const TARGET_CHANNELS_PER_COUNTRY_CATEGORY = 500; // NoxInfluencer는 TOP 100이지만 더 많은 데이터 확보
 const MIN_REQUIRED_CHANNELS = 200; // 최소 보장 개수 (NoxInfluencer 기준: 충분한 데이터)
-const MIN_SUBSCRIBER_COUNT = 100; // 데이터 확보를 위해 완화 (1000 → 100)
-const MIN_VIEW_COUNT = 1000; // 데이터 확보를 위해 완화 (10000 → 1000)
+const MIN_SUBSCRIBER_COUNT = 30000; // 최소 3만명 이상 (품질 보장)
+const MIN_VIEW_COUNT = 1000000; // 최소 100만 조회수 이상 (품질 보장)
 
-// 국가별 최소 기준 조정 (NoxInfluencer 벤치마킹: 더 많은 데이터 확보)
+// 국가별 최소 기준 조정 (품질 보장: 최소 3만명, 많은 국가는 5만명)
+// 채널 수가 많은 국가(200개 이상): 5만명 이상
+// 채널 수가 적은 국가(200개 미만): 3만명 이상
 const COUNTRY_MIN_STANDARDS: Record<string, { subscribers: number; views: number }> = {
-  IT: { subscribers: 100, views: 1000 },   // 이탈리아 (기준 완화)
-  TH: { subscribers: 100, views: 1000 },   // 태국 (기준 완화)
-  JP: { subscribers: 100, views: 1000 },   // 일본 (기준 완화)
-  BR: { subscribers: 100, views: 1000 },   // 브라질 (기준 완화)
-  VN: { subscribers: 500, views: 5000 },   // 베트남
-  PH: { subscribers: 500, views: 5000 },   // 필리핀
-  ID: { subscribers: 500, views: 5000 },   // 인도네시아
-  MY: { subscribers: 500, views: 5000 },   // 말레이시아
-  SG: { subscribers: 500, views: 5000 },   // 싱가포르
-  TW: { subscribers: 500, views: 5000 },   // 대만
-  HK: { subscribers: 500, views: 5000 },   // 홍콩
-  BD: { subscribers: 500, views: 5000 },   // 방글라데시
-  PK: { subscribers: 500, views: 5000 },   // 파키스탄
-  MM: { subscribers: 500, views: 5000 },   // 미얀마
-  KH: { subscribers: 500, views: 5000 },   // 캄보디아
-  LA: { subscribers: 500, views: 5000 },   // 라오스
-  BN: { subscribers: 500, views: 5000 },   // 브루나이
-  CL: { subscribers: 500, views: 5000 },   // 칠레
-  AR: { subscribers: 500, views: 5000 },   // 아르헨티나
-  UY: { subscribers: 500, views: 5000 },   // 우루과이
-  CO: { subscribers: 500, views: 5000 },   // 콜롬비아
-  PE: { subscribers: 500, views: 5000 },   // 페루
-  EC: { subscribers: 500, views: 5000 },   // 에콰도르
-  PY: { subscribers: 500, views: 5000 },   // 파라과이
-  BO: { subscribers: 500, views: 5000 },   // 볼리비아
-  VE: { subscribers: 500, views: 5000 },   // 베네수엘라
-  GY: { subscribers: 500, views: 5000 },   // 가이아나
-  SR: { subscribers: 500, views: 5000 },   // 수리남
-  GF: { subscribers: 500, views: 5000 },   // 프랑스령 기아나
-  FK: { subscribers: 500, views: 5000 },   // 포클랜드 제도
-  NL: { subscribers: 500, views: 5000 },   // 네덜란드
-  CH: { subscribers: 500, views: 5000 },   // 스위스
-  SE: { subscribers: 500, views: 5000 },   // 스웨덴
-  BE: { subscribers: 500, views: 5000 },   // 벨기에
-  AT: { subscribers: 500, views: 5000 },   // 오스트리아
-  IE: { subscribers: 500, views: 5000 },   // 아일랜드
-  NO: { subscribers: 500, views: 5000 },   // 노르웨이
-  DK: { subscribers: 500, views: 5000 },   // 덴마크
-  FI: { subscribers: 500, views: 5000 },   // 핀란드
-  LU: { subscribers: 500, views: 5000 },   // 룩셈부르크
-  IS: { subscribers: 500, views: 5000 },   // 아이슬란드
-  MC: { subscribers: 500, views: 5000 },   // 모나코
-  LI: { subscribers: 500, views: 5000 },   // 리히텐슈타인
-  MT: { subscribers: 500, views: 5000 },   // 몰타
-  AD: { subscribers: 500, views: 5000 },   // 안도라
-  ES: { subscribers: 500, views: 5000 },   // 스페인
-  PL: { subscribers: 500, views: 5000 },   // 폴란드
-  PT: { subscribers: 500, views: 5000 },   // 포르투갈
-  GR: { subscribers: 500, views: 5000 },   // 그리스
-  CZ: { subscribers: 500, views: 5000 },   // 체코
-  RO: { subscribers: 500, views: 5000 },   // 루마니아
-  HU: { subscribers: 500, views: 5000 },   // 헝가리
-  UA: { subscribers: 500, views: 5000 },   // 우크라이나
-  SA: { subscribers: 500, views: 5000 },   // 사우디아라비아
-  AE: { subscribers: 500, views: 5000 },   // 아랍에미리트
-  IL: { subscribers: 500, views: 5000 },   // 이스라엘
-  TR: { subscribers: 500, views: 5000 },   // 터키
-  EG: { subscribers: 500, views: 5000 },   // 이집트
-  AU: { subscribers: 500, views: 5000 },   // 호주
-  NZ: { subscribers: 500, views: 5000 },   // 뉴질랜드
-  ZA: { subscribers: 500, views: 5000 },   // 남아프리카
-  NG: { subscribers: 500, views: 5000 },   // 나이지리아
-  KE: { subscribers: 500, views: 5000 },   // 케냐
+  // 채널 수가 많은 국가 (200개 이상) - 5만명 이상
+  IT: { subscribers: 50000, views: 2000000 },   // 이탈리아 (2,183개)
+  US: { subscribers: 50000, views: 2000000 },   // 미국 (1,294개)
+  MX: { subscribers: 50000, views: 2000000 },   // 멕시코 (559개)
+  CA: { subscribers: 50000, views: 2000000 },   // 캐나다 (525개)
+  
+  // 채널 수가 적은 국가 (200개 미만) - 3만명 이상
+  KR: { subscribers: 30000, views: 1000000 },   // 한국 (25개) - 우선 수집 필요
+  ES: { subscribers: 30000, views: 1000000 },   // 스페인 (19개)
+  IN: { subscribers: 30000, views: 1000000 },   // 인도 (16개)
+  GB: { subscribers: 30000, views: 1000000 },   // 영국 (16개)
+  AR: { subscribers: 30000, views: 1000000 },   // 아르헨티나 (15개)
+  CO: { subscribers: 30000, views: 1000000 },   // 콜롬비아 (9개)
+  PE: { subscribers: 30000, views: 1000000 },   // 페루 (5개)
+  BD: { subscribers: 30000, views: 1000000 },   // 방글라데시 (4개)
+  CL: { subscribers: 30000, views: 1000000 },   // 칠레 (4개)
+  ID: { subscribers: 30000, views: 1000000 },   // 인도네시아 (4개)
+  FR: { subscribers: 30000, views: 1000000 },   // 프랑스 (4개)
+  PR: { subscribers: 30000, views: 1000000 },   // 푸에르토리코 (4개)
+  PH: { subscribers: 30000, views: 1000000 },   // 필리핀 (3개)
+  DE: { subscribers: 30000, views: 1000000 },   // 독일 (3개)
+  DO: { subscribers: 30000, views: 1000000 },   // 도미니카공화국 (3개)
+  AU: { subscribers: 30000, views: 1000000 },   // 호주 (3개)
+  EC: { subscribers: 30000, views: 1000000 },   // 에콰도르 (2개)
+  SV: { subscribers: 30000, views: 1000000 },   // 엘살바도르 (2개)
+  AE: { subscribers: 30000, views: 1000000 },   // 아랍에미리트 (2개)
+  PT: { subscribers: 30000, views: 1000000 },   // 포르투갈 (2개)
+  BG: { subscribers: 30000, views: 1000000 },   // 불가리아 (2개)
+  
+  // 기타 국가 (1개) - 3만명 이상
+  RS: { subscribers: 30000, views: 1000000 },   // 세르비아
+  NG: { subscribers: 30000, views: 1000000 },   // 나이지리아
+  IL: { subscribers: 30000, views: 1000000 },   // 이스라엘
+  BO: { subscribers: 30000, views: 1000000 },   // 볼리비아
+  NL: { subscribers: 30000, views: 1000000 },   // 네덜란드
+  HN: { subscribers: 30000, views: 1000000 },   // 온두라스
+  TR: { subscribers: 30000, views: 1000000 },   // 터키
+  GR: { subscribers: 30000, views: 1000000 },   // 그리스
+  CH: { subscribers: 30000, views: 1000000 },   // 스위스
+  JP: { subscribers: 30000, views: 1000000 },   // 일본
+  LK: { subscribers: 30000, views: 1000000 },   // 스리랑카
+  SG: { subscribers: 30000, views: 1000000 },   // 싱가포르
+  ZA: { subscribers: 30000, views: 1000000 },   // 남아프리카
+  PK: { subscribers: 30000, views: 1000000 },   // 파키스탄
+  
+  // 기본값 (명시되지 않은 국가)
+  default: { subscribers: 30000, views: 1000000 },
 };
 
 // 국가별 현지어 키워드 매핑 (NoxInfluencer 벤치마킹: 확대)
@@ -629,15 +615,10 @@ async function fetchChannelDetails(channelIds: string[], targetCountryCode?: str
             || snippet.thumbnails?.default?.url 
             || null;
           
-          // NoxInfluencer 벤치마킹: 최소 기준 완화하여 더 많은 데이터 확보
-          // 데이터 부족 국가(이탈리아 등)는 더 완화된 기준 적용
-          const isDataScarceCountry = targetCountryCode === "IT";
-          const effectiveMinSubscribers = isDataScarceCountry 
-            ? Math.max(minStandards.subscribers, 50) // 이탈리아는 50명 이상으로 완화
-            : minStandards.subscribers;
-          const effectiveMinViews = isDataScarceCountry
-            ? Math.max(minStandards.views, 500) // 이탈리아는 500 조회수 이상으로 완화
-            : minStandards.views;
+          // 국가별 최소 기준 적용 (품질 보장)
+          // 채널 수가 많은 국가는 5만명 이상, 적은 국가는 3만명 이상
+          const effectiveMinSubscribers = minStandards.subscribers;
+          const effectiveMinViews = minStandards.views;
           
           if (subscriberCount >= effectiveMinSubscribers && viewCount >= effectiveMinViews) {
             const channelCountry = snippet.country || null;
@@ -1106,9 +1087,10 @@ async function main() {
     
     const countries = COUNTRIES.filter(c => c.value !== "all");
     
-    // 1단계: 데이터가 없는 국가 우선 수집
-    console.log("🔍 데이터가 없는 국가 확인 중...\n");
+    // 1단계: 채널 수가 적은 국가 우선 수집 (200개 미만)
+    console.log("🔍 채널 수가 적은 국가 확인 중...\n");
     const emptyCountries: Array<{ code: string; name: string; count: number }> = [];
+    const lowCountCountries: Array<{ code: string; name: string; count: number }> = [];
     const countriesWithData: Array<{ code: string; name: string; count: number }> = [];
     
     for (const country of countries) {
@@ -1118,23 +1100,34 @@ async function main() {
       
       if (count === 0) {
         emptyCountries.push({ code: country.value, name: country.label, count });
+      } else if (count < MIN_REQUIRED_CHANNELS) {
+        lowCountCountries.push({ code: country.value, name: country.label, count });
       } else {
         countriesWithData.push({ code: country.value, name: country.label, count });
       }
     }
     
-    console.log(`📊 데이터가 없는 국가: ${emptyCountries.length}개`);
-    console.log(`📊 데이터가 있는 국가: ${countriesWithData.length}개\n`);
+    // 우선순위 정렬: 0개 → 적은 순서대로
+    emptyCountries.sort((a, b) => a.count - b.count);
+    lowCountCountries.sort((a, b) => a.count - b.count);
     
-    // 데이터가 없는 국가 우선 처리
+    console.log(`📊 데이터가 없는 국가: ${emptyCountries.length}개`);
+    console.log(`📊 채널 수가 적은 국가 (${MIN_REQUIRED_CHANNELS}개 미만): ${lowCountCountries.length}개`);
+    console.log(`📊 충분한 데이터가 있는 국가: ${countriesWithData.length}개\n`);
+    
+    // 데이터가 없거나 적은 국가 우선 처리
     let totalCollected = 0;
     let totalSaved = 0;
     
-    if (emptyCountries.length > 0) {
-      console.log("🚀 데이터가 없는 국가에 집중하여 수집 시작...\n");
+    // 우선순위: 1) 데이터 없는 국가, 2) 채널 수가 적은 국가 (적은 순서대로)
+    const priorityCountries = [...emptyCountries, ...lowCountCountries];
+    
+    if (priorityCountries.length > 0) {
+      console.log(`🚀 채널 수가 적은 국가에 집중하여 수집 시작 (${priorityCountries.length}개 국가)...\n`);
       
-      for (const country of emptyCountries) {
-        console.log(`\n🌍 ${country.name} (${country.code}) - 데이터 없음, 우선 수집\n`);
+      for (const country of priorityCountries) {
+        const statusText = country.count === 0 ? "데이터 없음" : `현재 ${country.count}개`;
+        console.log(`\n🌍 ${country.name} (${country.code}) - ${statusText}, 우선 수집\n`);
         
         for (const category of CATEGORIES) {
           try {
@@ -1170,8 +1163,8 @@ async function main() {
       }
     }
     
-    // 2단계: 데이터가 있는 국가는 신규 채널만 수집 (기존 로직)
-    if (emptyCountries.length === 0 || exhaustedKeys.size < YOUTUBE_API_KEYS.length) {
+    // 2단계: 충분한 데이터가 있는 국가는 신규 채널만 수집 (기존 로직)
+    if (priorityCountries.length === 0 || exhaustedKeys.size < YOUTUBE_API_KEYS.length) {
       console.log("\n\n📈 데이터가 있는 국가의 신규 채널 수집 시작...\n");
       
       let processed = 0;

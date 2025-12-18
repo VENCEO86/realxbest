@@ -94,3 +94,4 @@ Write-Host "   gh secret set DATABASE_URL --repo $Repository --body `"your-datab
 Write-Host "`n또는 웹에서 수동 설정:" -ForegroundColor Gray
 Write-Host "   https://github.com/$Repository/settings/secrets/actions" -ForegroundColor Cyan
 
+

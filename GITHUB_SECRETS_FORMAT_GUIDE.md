@@ -164,3 +164,4 @@ echo $YOUTUBE_API_KEYS | tr ',' '\n' | while read key; do echo "${#key}"; done
 - [ ] 빈 값 없음
 - [ ] 시작/끝에 쉼표 없음
 
+

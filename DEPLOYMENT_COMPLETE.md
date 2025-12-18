@@ -165,3 +165,4 @@ gh workflow run daily-collect.yml --repo VENCEO86/realxbest
 - `RENDER_POSTGRESQL_FIND_GUIDE.md`: Render 데이터베이스 찾기 가이드
 - `DATABASE_URL_FIX_GUIDE.md`: DATABASE_URL 설정 가이드
 
+

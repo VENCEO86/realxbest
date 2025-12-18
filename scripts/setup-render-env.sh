@@ -56,3 +56,4 @@ echo "✅ 환경 변수 설정 완료!"
 echo "Render 대시보드에서 확인하세요: https://dashboard.render.com/web/$SERVICE_ID"
 
 
+
