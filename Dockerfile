@@ -27,14 +27,21 @@ RUN apk add --no-cache openssl1.1-compat openssl-libs-compat libc6-compat || \
 
 COPY --from=deps /app/node_modules ./node_modules
 
-# Prisma 스키마만 먼저 복사 (캐시 최적화)
+# 소스 코드 복사 (캐시 최적화: 변경이 적은 파일 먼저)
+COPY next.config.mjs ./
+COPY tsconfig.json ./
+COPY tailwind.config.ts ./
+COPY postcss.config.js ./
 COPY prisma ./prisma
 
 # Prisma 클라이언트 생성 (스키마 변경 시에만 재실행)
 RUN npx prisma generate --schema=./prisma/schema.prisma
 
-# 나머지 소스 코드 복사
-COPY . .
+# 나머지 소스 코드 복사 (변경이 많은 파일)
+COPY app ./app
+COPY components ./components
+COPY lib ./lib
+COPY public ./public
 
 # 환경 변수 설정 (빌드 시점)
 ENV NEXT_TELEMETRY_DISABLED 1
