@@ -5,7 +5,7 @@ services:
     env: docker
     dockerfilePath: ./Dockerfile
     dockerContext: .
-    plan: free
+    plan: starter
     # Dockerfile을 사용하므로 buildCommand와 startCommand는 비워둠
     buildCommand: ""
     startCommand: ""
