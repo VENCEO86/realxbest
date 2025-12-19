@@ -25,8 +25,8 @@ const QUOTA_LIMIT_PER_KEY = 9000; // 키당 일일 할당량 (안전 마진)
 // NoxInfluencer 벤치마킹 목표 설정 (데이터 확보 우선)
 const TARGET_CHANNELS_PER_COUNTRY_CATEGORY = 500; // NoxInfluencer는 TOP 100이지만 더 많은 데이터 확보
 const MIN_REQUIRED_CHANNELS = 200; // 최소 보장 개수 (NoxInfluencer 기준: 충분한 데이터)
-const MIN_SUBSCRIBER_COUNT = 30000; // 최소 3만명 이상 (품질 보장)
-const MIN_VIEW_COUNT = 1000000; // 최소 100만 조회수 이상 (품질 보장)
+const MIN_SUBSCRIBER_COUNT = 10000; // 최소 1만명 이상 (데이터 부족 국가를 위해 기준 완화)
+const MIN_VIEW_COUNT = 500000; // 최소 50만 조회수 이상 (데이터 부족 국가를 위해 기준 완화)
 
 // 국가별 최소 기준 조정 (품질 보장: 최소 3만명, 많은 국가는 5만명)
 // 채널 수가 많은 국가(200개 이상): 5만명 이상
@@ -38,47 +38,48 @@ const COUNTRY_MIN_STANDARDS: Record<string, { subscribers: number; views: number
   MX: { subscribers: 50000, views: 2000000 },   // 멕시코 (559개)
   CA: { subscribers: 50000, views: 2000000 },   // 캐나다 (525개)
   
-  // 채널 수가 적은 국가 (200개 미만) - 3만명 이상
-  KR: { subscribers: 30000, views: 1000000 },   // 한국 (25개) - 우선 수집 필요
-  ES: { subscribers: 30000, views: 1000000 },   // 스페인 (19개)
-  IN: { subscribers: 30000, views: 1000000 },   // 인도 (16개)
-  GB: { subscribers: 30000, views: 1000000 },   // 영국 (16개)
-  AR: { subscribers: 30000, views: 1000000 },   // 아르헨티나 (15개)
-  CO: { subscribers: 30000, views: 1000000 },   // 콜롬비아 (9개)
-  PE: { subscribers: 30000, views: 1000000 },   // 페루 (5개)
-  BD: { subscribers: 30000, views: 1000000 },   // 방글라데시 (4개)
-  CL: { subscribers: 30000, views: 1000000 },   // 칠레 (4개)
-  ID: { subscribers: 30000, views: 1000000 },   // 인도네시아 (4개)
-  FR: { subscribers: 30000, views: 1000000 },   // 프랑스 (4개)
-  PR: { subscribers: 30000, views: 1000000 },   // 푸에르토리코 (4개)
-  PH: { subscribers: 30000, views: 1000000 },   // 필리핀 (3개)
-  DE: { subscribers: 30000, views: 1000000 },   // 독일 (3개)
-  DO: { subscribers: 30000, views: 1000000 },   // 도미니카공화국 (3개)
-  AU: { subscribers: 30000, views: 1000000 },   // 호주 (3개)
-  EC: { subscribers: 30000, views: 1000000 },   // 에콰도르 (2개)
-  SV: { subscribers: 30000, views: 1000000 },   // 엘살바도르 (2개)
-  AE: { subscribers: 30000, views: 1000000 },   // 아랍에미리트 (2개)
-  PT: { subscribers: 30000, views: 1000000 },   // 포르투갈 (2개)
-  BG: { subscribers: 30000, views: 1000000 },   // 불가리아 (2개)
+  // 채널 수가 적은 국가 (200개 미만) - 데이터 부족 국가는 기준 완화
+  // 10개 미만 국가: 1만명 이상 (더 많은 채널 수집)
+  KR: { subscribers: 10000, views: 500000 },   // 한국 (25개) - 기준 완화
+  ES: { subscribers: 10000, views: 500000 },   // 스페인 (19개) - 기준 완화
+  IN: { subscribers: 10000, views: 500000 },   // 인도 (16개) - 기준 완화
+  GB: { subscribers: 10000, views: 500000 },   // 영국 (16개) - 기준 완화
+  AR: { subscribers: 10000, views: 500000 },   // 아르헨티나 (15개) - 기준 완화
+  CO: { subscribers: 10000, views: 500000 },   // 콜롬비아 (9개) - 기준 완화
+  PE: { subscribers: 10000, views: 500000 },   // 페루 (5개) - 기준 완화
+  BD: { subscribers: 10000, views: 500000 },   // 방글라데시 (4개) - 기준 완화
+  CL: { subscribers: 10000, views: 500000 },   // 칠레 (4개) - 기준 완화
+  ID: { subscribers: 10000, views: 500000 },   // 인도네시아 (4개) - 기준 완화
+  FR: { subscribers: 10000, views: 500000 },   // 프랑스 (4개) - 기준 완화
+  PR: { subscribers: 10000, views: 500000 },   // 푸에르토리코 (4개) - 기준 완화
+  PH: { subscribers: 10000, views: 500000 },   // 필리핀 (3개) - 기준 완화
+  DE: { subscribers: 10000, views: 500000 },   // 독일 (3개) - 기준 완화
+  DO: { subscribers: 10000, views: 500000 },   // 도미니카공화국 (3개) - 기준 완화
+  AU: { subscribers: 10000, views: 500000 },   // 호주 (3개) - 기준 완화
+  EC: { subscribers: 10000, views: 500000 },   // 에콰도르 (2개) - 기준 완화
+  SV: { subscribers: 10000, views: 500000 },   // 엘살바도르 (2개) - 기준 완화
+  AE: { subscribers: 10000, views: 500000 },   // 아랍에미리트 (2개) - 기준 완화
+  PT: { subscribers: 10000, views: 500000 },   // 포르투갈 (2개) - 기준 완화
+  BG: { subscribers: 10000, views: 500000 },   // 불가리아 (2개) - 기준 완화
   
-  // 기타 국가 (1개) - 3만명 이상
-  RS: { subscribers: 30000, views: 1000000 },   // 세르비아
-  NG: { subscribers: 30000, views: 1000000 },   // 나이지리아
-  IL: { subscribers: 30000, views: 1000000 },   // 이스라엘
-  BO: { subscribers: 30000, views: 1000000 },   // 볼리비아
-  NL: { subscribers: 30000, views: 1000000 },   // 네덜란드
-  HN: { subscribers: 30000, views: 1000000 },   // 온두라스
-  TR: { subscribers: 30000, views: 1000000 },   // 터키
-  GR: { subscribers: 30000, views: 1000000 },   // 그리스
-  CH: { subscribers: 30000, views: 1000000 },   // 스위스
-  JP: { subscribers: 30000, views: 1000000 },   // 일본
-  LK: { subscribers: 30000, views: 1000000 },   // 스리랑카
-  SG: { subscribers: 30000, views: 1000000 },   // 싱가포르
-  ZA: { subscribers: 30000, views: 1000000 },   // 남아프리카
-  PK: { subscribers: 30000, views: 1000000 },   // 파키스탄
+  // 기타 국가 (1개) - 기준 완화
+  RS: { subscribers: 10000, views: 500000 },   // 세르비아 - 기준 완화
+  NG: { subscribers: 10000, views: 500000 },   // 나이지리아 - 기준 완화
+  IL: { subscribers: 10000, views: 500000 },   // 이스라엘 - 기준 완화
+  BO: { subscribers: 10000, views: 500000 },   // 볼리비아 - 기준 완화
+  NL: { subscribers: 10000, views: 500000 },   // 네덜란드 - 기준 완화
+  HN: { subscribers: 10000, views: 500000 },   // 온두라스 - 기준 완화
+  TR: { subscribers: 10000, views: 500000 },   // 터키 - 기준 완화
+  GR: { subscribers: 10000, views: 500000 },   // 그리스 - 기준 완화
+  CH: { subscribers: 10000, views: 500000 },   // 스위스 - 기준 완화
+  JP: { subscribers: 10000, views: 500000 },   // 일본 - 기준 완화
+  LK: { subscribers: 10000, views: 500000 },   // 스리랑카 - 기준 완화
+  SG: { subscribers: 10000, views: 500000 },   // 싱가포르 - 기준 완화
+  ZA: { subscribers: 10000, views: 500000 },   // 남아프리카 - 기준 완화
+  PK: { subscribers: 10000, views: 500000 },   // 파키스탄 - 기준 완화
   
-  // 기본값 (명시되지 않은 국가)
-  default: { subscribers: 30000, views: 1000000 },
+  // 기본값 (명시되지 않은 국가) - 데이터 부족 국가를 위해 기준 완화
+  default: { subscribers: 10000, views: 500000 },
 };
 
 // 국가별 현지어 키워드 매핑 (NoxInfluencer 벤치마킹: 확대)
