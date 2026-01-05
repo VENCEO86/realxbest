@@ -32,26 +32,12 @@ function getNextApiKey(): string {
  */
 function markKeyExhausted(apiKey: string) {
   exhaustedKeys.add(apiKey);
-  // API 키 소진 로그 제거 (성능 최적화)
+  console.log(`  🚫 API 키 소진됨: ${apiKey.substring(0, 20)}... (남은 키: ${YOUTUBE_API_KEYS.length - exhaustedKeys.size}개)`);
 }
 
 export const dynamic = 'force-dynamic';
 
-// 간단한 메모리 캐시
-const rankingsCache = new Map<string, { data: any; timestamp: number }>();
-const RANKINGS_CACHE_TTL = 10 * 60 * 1000; // 10분 (캐시 시간 증가로 성능 향상)
-
 export async function GET(request: NextRequest) {
-  // 캐시 키 생성
-  const cacheKey = request.nextUrl.toString();
-  const cached = rankingsCache.get(cacheKey);
-  if (cached && Date.now() - cached.timestamp < RANKINGS_CACHE_TTL) {
-      return NextResponse.json(cached.data, {
-        headers: {
-          'Cache-Control': 'public, s-maxage=600, stale-while-revalidate=1200',
-        },
-      });
-  }
 
   try {
     const searchParams = request.nextUrl.searchParams;
@@ -61,10 +47,17 @@ export async function GET(request: NextRequest) {
     const period = searchParams.get("period") || "weekly";
     const page = parseInt(searchParams.get("page") || "1");
     
-    // limit 설정: 페이지네이션을 위해 200개씩 고정 (데이터 부족 시 조정)
-    const requestedLimit = parseInt(searchParams.get("limit") || "200");
-    // 데이터가 적을 수 있으므로 최소값 완화 (100개 이상이면 200개, 아니면 가능한 만큼)
-    const limit = Math.min(Math.max(requestedLimit, 100), 500); // 최소 100개, 최대 500개
+    // 동적 limit 설정: 전체 지역일 때는 더 많이, 카테고리별 최소 100개, 국가별 200개
+    let defaultLimit = 100;
+    if (country && country !== "all") {
+      defaultLimit = 500; // 국가별 필터링 시 500개 (확대)
+    } else if (category && category !== "all") {
+      defaultLimit = 200; // 카테고리별 필터링 시 200개 (확대)
+    } else if (country === "all" && (!category || category === "all")) {
+      defaultLimit = 1000; // 전체 지역 + 전체 카테고리일 때는 1000개 (모든 데이터 표시, 확대)
+    }
+    
+    const limit = parseInt(searchParams.get("limit") || String(defaultLimit));
     const skip = (page - 1) * limit;
 
     // 실제 YouTube API 데이터 가져오기 (데이터베이스가 없을 때)
@@ -2265,11 +2258,11 @@ export async function GET(request: NextRequest) {
                     apiKey = getNextRuntimeApiKey();
                     continue;
                   } else {
-                    // 모든 키 소진 (에러 로그 제거 - 성능 최적화)
+                    console.error(`YouTube API error (batch ${batchNum}): 모든 키 소진`);
                     break;
                   }
                 } else {
-                  // YouTube API 에러 (에러 로그 제거 - 성능 최적화)
+                  console.error(`YouTube API error (batch ${batchNum}):`, response.status);
                   break;
                 }
               }
@@ -2286,7 +2279,7 @@ export async function GET(request: NextRequest) {
               }
               break; // 성공 또는 다른 오류 시 루프 탈출
             } catch (error) {
-              // YouTube API 에러 (에러 로그 제거 - 성능 최적화)
+              console.error(`YouTube API error (batch ${batchNum}):`, error);
               break;
             }
           }
@@ -2415,7 +2408,7 @@ export async function GET(request: NextRequest) {
             channelId: item.id,
             channelName: snippet.title,
             handle: snippet.customUrl?.replace("@", "") || snippet.title.toLowerCase().replace(/\s+/g, ""),
-            profileImageUrl: snippet.thumbnails?.high?.url || snippet.thumbnails?.default?.url || null,
+            profileImageUrl: profileImageUrl,
             category: { name: categoryName },
             subscriberCount: subCount,
             totalViewCount: viewCount,
@@ -2519,7 +2512,7 @@ export async function GET(request: NextRequest) {
           total: rankedChannels.length,
         };
       } catch (error) {
-        // YouTube API 에러 (에러 로그 제거 - 성능 최적화)
+        console.error("YouTube API error:", error);
         return await getMockData();
       }
     };
@@ -2565,7 +2558,7 @@ export async function GET(request: NextRequest) {
           }
         } catch (error) {
           
-          // 이미지 가져오기 실패 (에러 로그 제거 - 성능 최적화)
+          console.error(`Failed to fetch image for channel ${channelId}:`, error);
         }
 
         // API 호출 실패 시 placeholder 사용
@@ -2686,26 +2679,24 @@ export async function GET(request: NextRequest) {
       };
     };
 
-    // 데이터베이스 연결 확인 (Prisma는 필요 시 자동 연결하므로 실제 쿼리 시도)
-    // useMock 로직 제거 - 실제 데이터베이스 쿼리를 항상 시도
+    // 데이터베이스 연결 확인
+    let useMock = false;
+    try {
+      await prisma.$connect();
+    } catch (dbError) {
+      console.error("Database connection error:", dbError);
+      useMock = true;
+    }
 
     // 카테고리 필터
     const where: any = {};
     
-    // 기본 데이터 품질 필터 (데이터 부족 시 완화)
-    // 이탈리아 등 데이터 부족 국가는 더 완화된 기준 적용
-    const isDataScarceCountry = country === "IT";
-    const effectiveMinSubscribers = isDataScarceCountry ? 50 : 100; // 이탈리아: 50명 이상
-    const effectiveMinViews = isDataScarceCountry ? 500 : 1000; // 이탈리아: 500 조회수 이상
+    // 기본 데이터 품질 필터 (잘못된 데이터 제외)
+    // 1. 최소 구독자 수 (1천명 이상)
+    where.subscriberCount = { gte: BigInt(1000) };
     
-    // 1. 최소 구독자 수 (데이터 확보를 위해 완화)
-    where.subscriberCount = { gte: BigInt(effectiveMinSubscribers) };
-    
-    // 2. 최소 조회수 (데이터 확보를 위해 완화)
-    where.totalViewCount = { gte: BigInt(effectiveMinViews) };
-    
-    // 프로필 이미지는 필터링하지 않음 (데이터 부족 시 완화)
-    // 대신 애플리케이션 레벨에서 필터링
+    // 2. 최소 조회수 (1만 조회수 이상)
+    where.totalViewCount = { gte: BigInt(10000) };
     
     // 3. YouTube 공식 채널 제외 (채널명에 "youtube" 포함 제외)
     // Prisma에서는 복잡한 문자열 필터가 제한적이므로, 
@@ -2723,15 +2714,9 @@ export async function GET(request: NextRequest) {
         howto: "노하우/스타일",
         other: "기타",
       };
-      const categoryName = categoryMap[category] || category;
-      
-      // 카테고리 필터링 (정확한 매칭 또는 부분 매칭)
       where.category = {
-        name: categoryName, // 정확한 매칭
+        name: categoryMap[category] || category,
       };
-      
-      // 디버깅: 카테고리 필터 로그 (프로덕션에서는 제거)
-      // console.log(`카테고리 필터: ${category} -> ${categoryName}`);
     }
 
     // 국가 필터
@@ -2783,50 +2768,11 @@ export async function GET(request: NextRequest) {
         orderBy = { subscriberCount: "desc" };
     }
 
-    // 데이터베이스에서 실제 데이터 조회
-    // Prisma는 필요 시 자동으로 연결하므로 직접 연결 확인 불필요
-    // 쿼리 최적화: 필요한 필드만 선택
-    let channels: any[] = [];
-    let total = 0;
-    
-    try {
-      [channels, total] = await Promise.all([
-        prisma.youTubeChannel.findMany({
-          where,
-          select: {
-            id: true,
-            channelId: true,
-            channelName: true,
-            handle: true,
-            profileImageUrl: true,
-            subscriberCount: true,
-            totalViewCount: true,
-            weeklySubscriberChangeRate: true,
-            weeklyViewCount: true,
-            weeklyViewCountChangeRate: true,
-            averageEngagementRate: true,
-            currentRank: true,
-            rankChange: true,
-            lastUpdated: true,
-            country: true, // 국가 코드 추가
-            category: {
-              select: {
-                name: true,
-              },
-            },
-          },
-          orderBy,
-          skip,
-          take: limit,
-        }),
-        prisma.youTubeChannel.count({ where }),
-      ]);
-    } catch (dbError: any) {
-      // 데이터베이스 쿼리 실패 시 에러 로깅 및 fallback
-      console.error("[Rankings API] 데이터베이스 쿼리 실패:", dbError.message);
-      
-      // 데이터베이스 연결 실패 시 Mock 데이터 반환 (fallback)
+    // 데이터 조회
+    if (useMock) {
+      // 실제 YouTube API 데이터 가져오기 시도
       const apiData = await getYouTubeAPIData();
+      // YouTube 공식 채널 필터링
       const officialChannelKeywords = [
         "youtube movies", "youtube music", "youtube kids", "youtube gaming",
         "youtube tv", "youtube originals", "youtube creators", "youtube official",
@@ -2841,146 +2787,68 @@ export async function GET(request: NextRequest) {
         return !isOfficialChannel;
       });
       
-      const result = {
+      return NextResponse.json({
         channels: filteredApiChannels,
         total: filteredApiChannels.length,
         page,
         limit,
-      };
-
-      // 캐시에 저장
-      rankingsCache.set(cacheKey, { data: result, timestamp: Date.now() });
-      
-      return NextResponse.json(result, {
-        headers: {
-          'Cache-Control': 'public, s-maxage=600, stale-while-revalidate=1200',
-        },
       });
     }
 
-    // YouTube 공식 채널 필터링 (데이터 부족 시 완화)
-    const officialChannelKeywords = new Set([
+    const [channels, total] = await Promise.all([
+      prisma.youTubeChannel.findMany({
+        where,
+        include: {
+          category: true,
+        },
+        orderBy,
+        skip,
+        take: limit,
+      }),
+      prisma.youTubeChannel.count({ where }),
+    ]);
+
+    // YouTube 공식 채널 필터링 (애플리케이션 레벨)
+    const officialChannelKeywords = [
       "youtube movies", "youtube music", "youtube kids", "youtube gaming",
       "youtube tv", "youtube originals", "youtube creators", "youtube official",
       "youtube spotlight", "youtube trends", "youtube news"
-    ]);
-    
-    // 데이터가 충분할 때만 필터링 (데이터 부족 시 완화)
-    const shouldFilterOfficial = channels.length > 50;
+    ];
     
     const filteredChannels = channels.filter((channel: any) => {
-      // 공식 채널 제외 (데이터가 충분할 때만)
-      if (shouldFilterOfficial) {
-        const channelNameLower = channel.channelName?.toLowerCase() || "";
-        if (Array.from(officialChannelKeywords).some(keyword => 
-          channelNameLower.includes(keyword)
-        )) {
-          return false;
-        }
-      }
-      
-      // 프로필 이미지가 있으면 우선 표시, 없어도 표시 (데이터 부족 시 완화)
-      return true;
+      const channelNameLower = channel.channelName.toLowerCase();
+      const isOfficialChannel = officialChannelKeywords.some(keyword => 
+        channelNameLower.includes(keyword)
+      );
+      return !isOfficialChannel;
     });
 
-    // 데이터가 없으면 빈 배열 반환 (Mock 데이터로 fallback하지 않음)
-    if (channels.length === 0) {
-      console.log("[Rankings API] 데이터베이스에서 채널을 찾을 수 없습니다. 쿼리 조건:", JSON.stringify(where));
-      
-      const result = {
-        channels: [],
-        total: 0,
-        page,
-        limit,
-      };
+    // BigInt를 Number로 변환
+    const formattedChannels = filteredChannels.map((channel: any) => ({
+      ...channel,
+      subscriberCount: Number(channel.subscriberCount),
+      totalViewCount: Number(channel.totalViewCount),
+      weeklyViewCount: Number(channel.weeklyViewCount),
+      weeklySubscriberChange: Number(channel.weeklySubscriberChange),
+      weeklyViewCountChange: Number(channel.weeklyViewCountChange),
+    }));
 
-      rankingsCache.set(cacheKey, { data: result, timestamp: Date.now() });
-      
-      return NextResponse.json(result, {
-        headers: {
-          'Cache-Control': 'public, s-maxage=600, stale-while-revalidate=1200',
-        },
-      });
-    }
-
-    // BigInt를 Number로 변환 및 필드명 매핑
-    const formattedChannels = filteredChannels.map((channel: any, index: number) => {
-      // 주간 조회수 계산 (데이터베이스에 없으면 총 조회수의 5%로 추정)
-      const totalViews = Number(channel.totalViewCount || 0);
-      const weeklyViewCount = Number(channel.weeklyViewCount || 0);
-      const calculatedWeeklyViewCount = weeklyViewCount > 0 
-        ? weeklyViewCount 
-        : Math.floor(totalViews * 0.05); // 총 조회수의 5%로 추정
-      
-      // 주간 조회수 변화율 계산 (데이터베이스에 없으면 기본값)
-      const weeklyViewCountChangeRate = channel.weeklyViewCountChangeRate !== undefined && channel.weeklyViewCountChangeRate !== null
-        ? channel.weeklyViewCountChangeRate
-        : 5.0; // 기본값 5%
-      
-      return {
-        id: channel.id,
-        channelId: channel.channelId,
-        channelName: channel.channelName || "", // name 필드도 유지하되 channelName도 포함
-        name: channel.channelName || "", // channelName -> name 매핑 (하위 호환성)
-        handle: channel.handle,
-        profileImageUrl: channel.profileImageUrl || null, // null 처리 명시
-        subscriberCount: Number(channel.subscriberCount),
-        totalViewCount: totalViews,
-        weeklyViewCount: calculatedWeeklyViewCount,
-        weeklySubscriberChangeRate: channel.weeklySubscriberChangeRate || 0,
-        weeklyViewCountChangeRate: weeklyViewCountChangeRate,
-        averageEngagementRate: channel.averageEngagementRate || 0,
-        currentRank: channel.currentRank || (skip + index + 1), // 순위가 없으면 계산
-        rankChange: channel.rankChange || 0,
-        lastUpdated: channel.lastUpdated || new Date(),
-        countryCode: channel.country || "", // country -> countryCode 매핑
-        categoryName: channel.category?.name || "", // category.name -> categoryName 매핑
-        category: channel.category || { name: "" }, // category 객체도 포함 (하위 호환성)
-      };
-    });
-
-    const result = {
+    return NextResponse.json({
       channels: formattedChannels,
       total,
       page,
       limit,
-    };
-
-    // 캐시에 저장
-    rankingsCache.set(cacheKey, { data: result, timestamp: Date.now() });
-    
-    // 캐시 크기 제한 (최대 50개)
-    if (rankingsCache.size > 50) {
-      const firstKey = rankingsCache.keys().next().value;
-      if (firstKey) {
-        rankingsCache.delete(firstKey);
-      }
-    }
-
-    return NextResponse.json(result, {
-      headers: {
-        'Cache-Control': 'public, s-maxage=600, stale-while-revalidate=1200',
-      },
     });
   } catch (error) {
-    // 랭킹 가져오기 에러 (에러 로그 제거 - 성능 최적화)
-    
-    // 에러 발생 시 빈 배열 반환 (프론트엔드에서 처리)
+    console.error("Error fetching rankings:", error);
     return NextResponse.json(
       { 
         error: "Failed to fetch rankings",
         channels: [],
         total: 0,
-        page: 1,
-        limit: 100,
-        message: error instanceof Error ? error.message : "데이터를 불러오는 중 오류가 발생했습니다."
+        message: "데이터를 불러오는 중 오류가 발생했습니다."
       },
-      { 
-        status: 500,
-        headers: {
-          'Cache-Control': 'no-store', // 에러는 캐시하지 않음
-        },
-      }
+      { status: 500 }
     );
   }
 }
