@@ -27,6 +27,9 @@ RUN apk add --no-cache openssl1.1-compat openssl-libs-compat libc6-compat || \
 
 COPY --from=deps /app/node_modules ./node_modules
 
+# package.json과 package-lock.json 복사 (빌드 스크립트 실행에 필요)
+COPY package.json package-lock.json* ./
+
 # 소스 코드 복사 (캐시 최적화: 변경이 적은 파일 먼저)
 COPY next.config.mjs ./
 COPY tsconfig.json ./
@@ -47,8 +50,8 @@ COPY public ./public
 ENV NEXT_TELEMETRY_DISABLED 1
 ENV NODE_ENV production
 
-# Next.js 빌드 실행 (package.json의 build 스크립트가 prisma generate 포함)
-# TypeScript 체크는 Next.js 빌드에 포함되어 있음
+# Next.js 빌드 실행
+# package.json이 이미 복사되어 있으므로 npm run build가 정상 작동함
 RUN npm run build
 
 # 프로덕션 실행 단계
