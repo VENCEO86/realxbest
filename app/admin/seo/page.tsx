@@ -1,5 +1,4 @@
 import { redirect } from "next/navigation";
-import { SEOManager } from "@/components/admin/SEOManager";
 import { AdminNav } from "@/components/admin/AdminNav";
 import { isAdminAuthenticated } from "@/lib/admin-auth";
 
@@ -23,7 +22,11 @@ export default async function SEOAdminPage() {
 
       <AdminNav />
 
-      <SEOManager />
+      <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-6">
+        <p className="text-gray-600 dark:text-gray-400">
+          SEO 관리 기능은 현재 개발 중입니다.
+        </p>
+      </div>
     </div>
   );
 }

@@ -320,14 +320,15 @@ async function main() {
   const countryStats = new Map<string, number>();
   
   for (const country of COUNTRIES) {
+    if (country.value === "all") continue; // 전체 지역 제외
     const count = await prisma.youTubeChannel.count({
       where: {
-        country: country.code,
+        country: country.value,
         subscriberCount: { gte: BigInt(MIN_SUBSCRIBER_COUNT) },
         totalViewCount: { gte: BigInt(MIN_VIEW_COUNT) },
       },
     });
-    countryStats.set(country.code, count);
+    countryStats.set(country.value, count);
   }
   
   // 데이터가 적은 국가 우선순위 정렬 (0개 → 10개 미만 → 50개 미만)
@@ -338,9 +339,9 @@ async function main() {
   
   console.log("📋 우선 수집 대상 국가:\n");
   priorityCountries.forEach(([code, count], index) => {
-    const country = COUNTRIES.find(c => c.code === code);
+    const country = COUNTRIES.find(c => c.value === code);
     const status = count === 0 ? "❌ 없음" : count < 10 ? "⚠️ 매우 적음" : count < 50 ? "📊 적음" : "📈 보통";
-    console.log(`  ${index + 1}. ${country?.name || code} (${code}): ${count}개 ${status}`);
+    console.log(`  ${index + 1}. ${country?.label || code} (${code}): ${count}개 ${status}`);
   });
   
   console.log("\n" + "=".repeat(60) + "\n");
@@ -350,11 +351,11 @@ async function main() {
   
   // 우선순위대로 수집
   for (const [countryCode, currentCount] of priorityCountries) {
-    const country = COUNTRIES.find(c => c.code === countryCode);
+    const country = COUNTRIES.find(c => c.value === countryCode);
     if (!country) continue;
     
     try {
-      const result = await collectForCountry(countryCode, country.name);
+      const result = await collectForCountry(countryCode, country.label);
       totalCollected += result.collected;
       totalSaved += result.saved;
       
@@ -370,7 +371,7 @@ async function main() {
         break;
       }
     } catch (error: any) {
-      console.error(`\n❌ ${country.name} 수집 실패: ${error.message}`);
+      console.error(`\n❌ ${country.label} 수집 실패: ${error.message}`);
       continue;
     }
   }

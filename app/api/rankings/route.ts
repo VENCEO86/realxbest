@@ -2403,6 +2403,12 @@ export async function GET(request: NextRequest) {
             categoryName = "교육";
           }
 
+          // 프로필 이미지 URL 추출
+          const profileImageUrl = snippet.thumbnails?.high?.url || 
+                                  snippet.thumbnails?.medium?.url || 
+                                  snippet.thumbnails?.default?.url || 
+                                  null;
+
           return {
             id: item.id,
             channelId: item.id,

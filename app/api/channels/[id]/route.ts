@@ -113,12 +113,7 @@ export async function GET(
     // 최적화: 채널 정보에서 uploadsPlaylistId를 가져왔다면 전달하여 중복 API 호출 방지
     if (channelIdForVideos && (channelIdForVideos.startsWith("UC") || channel)) {
       try {
-        // 채널 정보를 이미 가져왔다면 uploadsPlaylistId 전달 (할당량 절약)
-        let uploadsPlaylistId: string | undefined;
-        if (channel && (channel as any).uploadsPlaylistId) {
-          uploadsPlaylistId = (channel as any).uploadsPlaylistId;
-        }
-        recentVideos = await fetchChannelVideos(channelIdForVideos, 5, YOUTUBE_API_KEY, uploadsPlaylistId);
+        recentVideos = await fetchChannelVideos(channelIdForVideos, 5, YOUTUBE_API_KEY);
         
         // API 호출 성공했지만 결과가 없으면 DB에서 가져오기 시도
         if (recentVideos.length === 0 && channel && channel.videos && channel.videos.length > 0) {
@@ -396,7 +391,7 @@ export async function GET(
             // 동영상 정보도 가져오기
             let fallbackVideos: any[] = [];
             try {
-              fallbackVideos = await fetchChannelVideos(actualChannelId, 5, YOUTUBE_API_KEY, youtubeData.uploadsPlaylistId);
+              fallbackVideos = await fetchChannelVideos(actualChannelId, 5, YOUTUBE_API_KEY);
             } catch (error) {
               console.error(`[Channel API] 동영상 가져오기 실패 (${actualChannelId}):`, error);
             }

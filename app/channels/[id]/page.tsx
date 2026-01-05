@@ -94,8 +94,8 @@ async function getChannel(id: string) {
           }
         }
         
-        console.log(`[getChannel] 동영상 가져오기 시도: ${actualChannelId}, uploadsPlaylistId: ${uploadsPlaylistId || '없음'}`);
-        recentVideos = await fetchChannelVideos(actualChannelId, 5, YOUTUBE_API_KEY, uploadsPlaylistId);
+        console.log(`[getChannel] 동영상 가져오기 시도: ${actualChannelId}`);
+        recentVideos = await fetchChannelVideos(actualChannelId, 5, YOUTUBE_API_KEY);
         console.log(`[getChannel] 동영상 가져오기 결과: ${recentVideos.length}개`);
         
         // API 호출 성공했지만 결과가 없으면 DB에서 가져오기 시도
@@ -205,7 +205,7 @@ async function getChannel(id: string) {
             where: { name: "기타" },
           });
           
-          const fallbackVideos = await fetchChannelVideos(actualChannelId, 5, YOUTUBE_API_KEY, youtubeData.uploadsPlaylistId).catch(() => []);
+          const fallbackVideos = await fetchChannelVideos(actualChannelId, 5, YOUTUBE_API_KEY).catch(() => []);
           
           // YouTube API 데이터를 채널 형식으로 변환
           channel = {

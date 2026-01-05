@@ -637,21 +637,17 @@ async function fetchChannelDetails(channelIds: string[], targetCountryCode?: str
             // 3. 데이터 부족 국가는 완화된 필터링 적용
             
             if (targetCountryCode) {
+              // 현재 국가의 채널 수 확인 (데이터 부족 여부 판단)
+              const currentCountryChannelCount = await prisma.youTubeChannel.count({
+                where: { country: targetCountryCode },
+              });
+              const isDataScarceCountry = currentCountryChannelCount < MIN_REQUIRED_CHANNELS;
+              
               // 위치 기반 필터링 함수
-              const shouldIncludeChannel = (channelCountry: string | null, targetCode: string): boolean => {
-                // 국가 정보가 없으면 regionCode로 검색했으므로 포함 (완화 모드)
-                if (!channelCountry) {
-                  return true; // regionCode로 검색했으므로 해당 지역 결과일 가능성 높음
-                }
-                
+              const shouldIncludeChannel = (channelCountry: string | null, targetCode: string, isDataScarce: boolean): boolean => {
                 // 정확히 일치하면 포함
                 if (channelCountry === targetCode) {
                   return true;
-                }
-                
-                // 데이터 부족 국가는 완화된 필터링
-                if (isDataScarceCountry) {
-                  return true; // 데이터 부족 국가는 모든 채널 포함
                 }
                 
                 // 관련 국가 허용 (예: 대만 → 중국, 홍콩 → 중국)
@@ -659,19 +655,30 @@ async function fetchChannelDetails(channelIds: string[], targetCountryCode?: str
                   TW: ["CN"], // 대만 → 중국
                   HK: ["CN"], // 홍콩 → 중국
                   MO: ["CN"], // 마카오 → 중국
+                  GB: ["IE"], // 영국 → 아일랜드
+                  US: ["CA"], // 미국 → 캐나다
                 };
                 
-                if (relatedCountries[targetCode]?.includes(channelCountry)) {
+                if (relatedCountries[targetCode]?.includes(channelCountry || "")) {
                   return true; // 관련 국가 허용
                 }
                 
-                // 엄격 모드: 국가 불일치 시 제외
-                // 완화 모드: regionCode로 검색했으므로 포함
-                return true; // 완화 모드 (더 많은 데이터 확보)
+                // 데이터 부족 국가는 완화된 필터링 (국가 정보가 없으면 포함)
+                if (isDataScarce && !channelCountry) {
+                  return true; // 데이터 부족 국가는 국가 정보 없는 채널도 포함
+                }
+                
+                // 국가 정보가 있고 불일치하면 제외 (엄격 모드)
+                if (channelCountry && channelCountry !== targetCode) {
+                  return false; // 다른 국가 채널 제외
+                }
+                
+                // 국가 정보가 없으면 regionCode로 검색했으므로 포함 (데이터 부족 국가만)
+                return isDataScarce;
               };
               
               // 위치 기반 필터링 적용
-              if (!shouldIncludeChannel(channelCountry, targetCountryCode)) {
+              if (!shouldIncludeChannel(channelCountry, targetCountryCode, isDataScarceCountry)) {
                 continue; // 다른 국가 채널 제외
               }
             }
