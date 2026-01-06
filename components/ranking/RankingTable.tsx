@@ -86,10 +86,10 @@ export function RankingTable() {
   const category = searchParams.get("category");
   const country = searchParams.get("country");
   
-  // limit 설정: 페이지네이션을 위해 200개씩 고정 (데이터 부족 시 조정)
+  // limit 설정: 전체 데이터 표시를 위해 최대값 증가
   const limit = Math.min(
-    Math.max(parseInt(searchParams.get("limit") || "200"), 100), // 최소 100개로 완화
-    500 // 최대 500개
+    Math.max(parseInt(searchParams.get("limit") || "1000"), 100), // 기본값 1000개로 증가
+    5000 // 최대 5000개까지 허용 (전체 데이터 표시)
   );
 
   const { data, isLoading, error, isError } = useQuery({

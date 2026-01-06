@@ -47,14 +47,14 @@ export async function GET(request: NextRequest) {
     const period = searchParams.get("period") || "weekly";
     const page = parseInt(searchParams.get("page") || "1");
     
-    // 동적 limit 설정: 전체 지역일 때는 더 많이, 카테고리별 최소 100개, 국가별 200개
-    let defaultLimit = 100;
+    // 동적 limit 설정: 전체 데이터 표시를 위해 최대값 증가
+    let defaultLimit = 5000; // 기본값을 5000개로 증가 (전체 데이터 표시)
     if (country && country !== "all") {
-      defaultLimit = 500; // 국가별 필터링 시 500개 (확대)
+      defaultLimit = 5000; // 국가별 필터링 시 5000개
     } else if (category && category !== "all") {
-      defaultLimit = 200; // 카테고리별 필터링 시 200개 (확대)
+      defaultLimit = 5000; // 카테고리별 필터링 시 5000개
     } else if (country === "all" && (!category || category === "all")) {
-      defaultLimit = 1000; // 전체 지역 + 전체 카테고리일 때는 1000개 (모든 데이터 표시, 확대)
+      defaultLimit = 5000; // 전체 지역 + 전체 카테고리일 때는 5000개 (모든 데이터 표시)
     }
     
     const limit = parseInt(searchParams.get("limit") || String(defaultLimit));
