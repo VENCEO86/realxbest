@@ -9,21 +9,23 @@ export function AdminAuthButton() {
   const router = useRouter();
 
   useEffect(() => {
-
     // 인증 상태 확인
     fetch("/api/admin/check-auth", {
       credentials: "include", // 쿠키 포함
     })
       .then((res) => {
-
+        // 200 OK인 경우에만 JSON 파싱
+        if (!res.ok) {
+          return { authenticated: false };
+        }
         return res.json();
       })
       .then((data) => {
-
-        setIsAuthenticated(data.authenticated);
+        setIsAuthenticated(data?.authenticated || false);
       })
       .catch((err) => {
-
+        // 네트워크 오류 등은 무시하고 인증되지 않은 것으로 처리
+        console.debug('[AdminAuthButton] 인증 확인 실패 (정상일 수 있음):', err);
         setIsAuthenticated(false);
       });
   }, []);
