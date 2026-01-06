@@ -63,12 +63,22 @@ ENV NEXT_TELEMETRY_DISABLED 1
 
 # Prisma 엔진 실행을 위한 필수 라이브러리 설치
 # Alpine Linux에서 Prisma는 openssl1.1-compat가 필요
-RUN apk add --no-cache openssl1.1-compat libc6-compat && \
-    # 심볼릭 링크 생성 (Prisma 엔진이 libssl.so.3를 찾을 수 있도록)
-    (test -f /usr/lib/libssl.so.1.1 && ln -sf /usr/lib/libssl.so.1.1 /usr/lib/libssl.so.3 || true) && \
-    (test -f /usr/lib/libcrypto.so.1.1 && ln -sf /usr/lib/libcrypto.so.1.1 /usr/lib/libcrypto.so.3 || true) && \
+RUN apk add --no-cache openssl1.1-compat openssl1.1 libc6-compat && \
     # 라이브러리 경로 확인
-    ls -la /usr/lib/libssl* /usr/lib/libcrypto* || true
+    echo "=== OpenSSL 라이브러리 확인 ===" && \
+    ls -la /usr/lib/libssl* /usr/lib/libcrypto* /lib/libssl* /lib/libcrypto* 2>/dev/null || true && \
+    # libssl.so.1.1이 있는지 확인하고 심볼릭 링크 생성
+    (test -f /usr/lib/libssl.so.1.1 && ln -sf /usr/lib/libssl.so.1.1 /usr/lib/libssl.so.1.1 || \
+     test -f /lib/libssl.so.1.1 && ln -sf /lib/libssl.so.1.1 /usr/lib/libssl.so.1.1 || \
+     echo "Warning: libssl.so.1.1 not found") && \
+    # libcrypto.so.1.1이 있는지 확인하고 심볼릭 링크 생성
+    (test -f /usr/lib/libcrypto.so.1.1 && ln -sf /usr/lib/libcrypto.so.1.1 /usr/lib/libcrypto.so.1.1 || \
+     test -f /lib/libcrypto.so.1.1 && ln -sf /lib/libcrypto.so.1.1 /usr/lib/libcrypto.so.1.1 || \
+     echo "Warning: libcrypto.so.1.1 not found") && \
+    # 최종 확인
+    echo "=== 최종 라이브러리 확인 ===" && \
+    ls -la /usr/lib/libssl.so.1.1 /usr/lib/libcrypto.so.1.1 2>/dev/null || \
+    (echo "Error: Required libraries not found" && find /usr/lib /lib -name "*ssl*" -o -name "*crypto*" 2>/dev/null | head -20)
 
 RUN addgroup --system --gid 1001 nodejs
 RUN adduser --system --uid 1001 nextjs
