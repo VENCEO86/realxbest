@@ -1089,6 +1089,13 @@ async function main() {
   console.log(`🔑 사용 가능한 API 키: ${YOUTUBE_API_KEYS.length}개`);
   console.log(`📈 키당 할당량: ${QUOTA_LIMIT_PER_KEY} units\n`);
   
+  // 할당량 초기화 (매일 새로운 실행이므로)
+  // YouTube API는 매일 UTC 00:00에 할당량을 리셋하므로,
+  // 스크립트 실행 시 할당량을 초기화하여 실제 할당량 상태 확인
+  dailyQuotaUsed.clear();
+  exhaustedKeys.clear();
+  console.log("🔄 할당량 추적 초기화 (매일 리셋)\n");
+  
   try {
     await prisma.$connect();
     console.log("✅ 데이터베이스 연결 성공\n");
