@@ -20,7 +20,7 @@ let currentKeyIndex = 0;
 const keyUsageCount = new Map<string, number>();
 const exhaustedKeys = new Set<string>();
 const dailyQuotaUsed = new Map<string, number>(); // 키별 일일 사용량
-const QUOTA_LIMIT_PER_KEY = 9000; // 키당 일일 할당량 (안전 마진)
+const QUOTA_LIMIT_PER_KEY = 10000; // 키당 일일 할당량 (최대 활용)
 
 // NoxInfluencer 벤치마킹 목표 설정 (데이터 확보 우선)
 const TARGET_CHANNELS_PER_COUNTRY_CATEGORY = 500; // NoxInfluencer는 TOP 100이지만 더 많은 데이터 확보
