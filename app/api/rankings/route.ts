@@ -2689,8 +2689,11 @@ export async function GET(request: NextRequest) {
     let useMock = false;
     try {
       await prisma.$connect();
-    } catch (dbError) {
-      console.error("Database connection error:", dbError);
+      console.log("✅ [Rankings API] 데이터베이스 연결 성공");
+    } catch (dbError: any) {
+      console.error("❌ [Rankings API] 데이터베이스 연결 실패:", dbError?.message || dbError);
+      console.error("   DATABASE_URL:", process.env.DATABASE_URL ? "설정됨" : "없음");
+      console.error("   오류 상세:", dbError);
       useMock = true;
     }
 
