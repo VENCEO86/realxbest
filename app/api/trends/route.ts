@@ -34,9 +34,6 @@ export async function GET() {
       ...channel,
       subscriberCount: Number(channel.subscriberCount),
       totalViewCount: Number(channel.totalViewCount),
-      weeklySubscriberChange: Number(channel.weeklySubscriberChange || 0),
-      weeklyViewCount: Number(channel.weeklyViewCount || 0),
-      weeklyViewCountChange: Number(channel.weeklyViewCountChange || 0),
     });
 
     return NextResponse.json({

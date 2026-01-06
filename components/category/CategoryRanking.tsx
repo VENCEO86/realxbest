@@ -7,7 +7,7 @@ import { formatNumber } from "@/lib/utils";
 import { CATEGORIES } from "@/lib/constants";
 
 async function fetchCategoryRanking(category: string) {
-  const response = await fetch(`/api/rankings?category=${category}&limit=200`);
+  const response = await fetch(`/api/rankings?category=${category}&limit=100`);
   if (!response.ok) return { channels: [], total: 0 };
   return response.json();
 }
@@ -52,7 +52,7 @@ export function CategoryRanking() {
               </tr>
             </thead>
             <tbody className="divide-y">
-              {data?.channels?.slice(0, 200).map((channel: any) => (
+              {data?.channels?.slice(0, 20).map((channel: any) => (
                 <tr key={channel.id} className="hover:bg-gray-50 dark:hover:bg-gray-700">
                   <td className="px-4 py-3">{channel.currentRank || "-"}</td>
                   <td className="px-4 py-3">

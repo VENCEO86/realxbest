@@ -12,7 +12,6 @@ interface YouTubeChannelData {
   country?: string;
   description?: string;
   channelCreatedAt?: Date;
-  uploadsPlaylistId?: string; // 동영상 가져오기 최적화를 위해 추가
 }
 
 /**
@@ -46,10 +45,8 @@ export async function fetchChannelFromYouTubeAPI(
     const channel = data.items[0];
     const snippet = channel.snippet;
     const statistics = channel.statistics;
-    const contentDetails = channel.contentDetails;
 
     const handle = snippet.customUrl?.replace("@", "") || null;
-    const uploadsPlaylistId = contentDetails?.relatedPlaylists?.uploads || undefined;
 
     return {
       channelId: channel.id,
@@ -62,7 +59,6 @@ export async function fetchChannelFromYouTubeAPI(
       country: snippet.country || null, // 국가 코드 (예: "US", "KR", "JP")
       description: snippet.description || null,
       channelCreatedAt: snippet.publishedAt ? new Date(snippet.publishedAt) : undefined,
-      uploadsPlaylistId: uploadsPlaylistId, // 동영상 가져오기 최적화
     };
   } catch (error) {
     console.error("Error fetching channel from YouTube API:", error);
@@ -170,16 +166,11 @@ export async function searchChannels(
 
 /**
  * 채널의 최근 동영상을 가져옵니다.
- * @param channelId 채널 ID
- * @param maxResults 최대 결과 수
- * @param apiKey YouTube API 키
- * @param uploadsPlaylistId (선택) uploads playlist ID - 제공되면 channels.list 호출 생략하여 할당량 절약
  */
 export async function fetchChannelVideos(
   channelId: string,
   maxResults: number = 5,
-  apiKey?: string,
-  uploadsPlaylistId?: string
+  apiKey?: string
 ): Promise<Array<{
   id: string;
   title: string;
@@ -191,48 +182,33 @@ export async function fetchChannelVideos(
   engagementRate: number;
 }>> {
   if (!apiKey) {
-    console.warn("[fetchChannelVideos] YouTube API key가 설정되지 않았습니다.");
-    return [];
-  }
-
-  if (!channelId || !channelId.startsWith("UC")) {
-    console.warn(`[fetchChannelVideos] 유효하지 않은 채널 ID: ${channelId}`);
+    
     return [];
   }
 
   try {
-    // uploadsPlaylistId가 제공되지 않으면 채널 정보에서 가져오기 (기존 방식)
-    let playlistId = uploadsPlaylistId;
-    
-    if (!playlistId) {
-      // 1. 채널의 uploads playlist ID 가져오기 (할당량 1 unit 소모)
-      const channelResponse = await fetch(
-        `https://www.googleapis.com/youtube/v3/channels?part=contentDetails&id=${channelId}&key=${apiKey}`
-      );
+    // 1. 채널의 uploads playlist ID 가져오기
+    const channelResponse = await fetch(
+      `https://www.googleapis.com/youtube/v3/channels?part=contentDetails&id=${channelId}&key=${apiKey}`
+    );
 
-      if (!channelResponse.ok) {
-        const errorData = await channelResponse.json().catch(() => ({}));
-        console.error(`[fetchChannelVideos] 채널 정보 조회 실패 (${channelId}):`, channelResponse.status, errorData);
-        return [];
-      }
+    if (!channelResponse.ok) {
+      return [];
+    }
 
-      const channelData = await channelResponse.json();
-      playlistId = channelData.items?.[0]?.contentDetails?.relatedPlaylists?.uploads;
+    const channelData = await channelResponse.json();
+    const uploadsPlaylistId = channelData.items?.[0]?.contentDetails?.relatedPlaylists?.uploads;
 
-      if (!playlistId) {
-        console.warn(`[fetchChannelVideos] 업로드 플레이리스트 ID를 찾을 수 없음 (${channelId})`);
-        return [];
-      }
+    if (!uploadsPlaylistId) {
+      return [];
     }
 
     // 2. Playlist에서 최근 동영상 가져오기
     const playlistResponse = await fetch(
-      `https://www.googleapis.com/youtube/v3/playlistItems?part=snippet&playlistId=${playlistId}&maxResults=${maxResults}&key=${apiKey}`
+      `https://www.googleapis.com/youtube/v3/playlistItems?part=snippet&playlistId=${uploadsPlaylistId}&maxResults=${maxResults}&key=${apiKey}`
     );
 
     if (!playlistResponse.ok) {
-      const errorData = await playlistResponse.json().catch(() => ({}));
-      console.error(`[fetchChannelVideos] 플레이리스트 조회 실패 (${playlistId}):`, playlistResponse.status, errorData);
       return [];
     }
 
@@ -249,19 +225,12 @@ export async function fetchChannelVideos(
     );
 
     if (!videosResponse.ok) {
-      const errorData = await videosResponse.json().catch(() => ({}));
-      console.error(`[fetchChannelVideos] 동영상 상세 정보 조회 실패:`, videosResponse.status, errorData);
       return [];
     }
 
     const videosData = await videosResponse.json();
 
-    if (!videosData.items || videosData.items.length === 0) {
-      console.warn(`[fetchChannelVideos] 동영상이 없음 (${channelId})`);
-      return [];
-    }
-
-    return videosData.items.map((video: any) => {
+    return videosData.items?.map((video: any) => {
       const snippet = video.snippet;
       const statistics = video.statistics;
       const viewCount = parseInt(statistics.viewCount || "0");
