@@ -86,7 +86,11 @@ COPY --from=builder --chown=nextjs:nodejs /app/node_modules/.prisma ./node_modul
 COPY --from=builder --chown=nextjs:nodejs /app/node_modules/@prisma ./node_modules/@prisma
 
 # Prisma 엔진 바이너리 확인 및 심볼릭 링크 생성 (필요시)
-RUN ls -la /app/node_modules/.prisma/client/ || echo "Prisma client directory not found"
+RUN ls -la /app/node_modules/.prisma/client/ || echo "Prisma client directory not found" && \
+    ls -la /app/node_modules/@prisma/client/ || echo "@prisma/client directory not found" && \
+    # Prisma 엔진 바이너리 확인
+    find /app/node_modules/.prisma -name "query-engine-*" -type f || echo "No query engine found" && \
+    find /app/node_modules/@prisma -name "query-engine-*" -type f || echo "No query engine found in @prisma"
 
 USER nextjs
 
