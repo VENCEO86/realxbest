@@ -2804,18 +2804,35 @@ export async function GET(request: NextRequest) {
       });
     }
 
-    const [channels, total] = await Promise.all([
-      prisma.youTubeChannel.findMany({
-        where,
-        include: {
-          category: true,
-        },
-        orderBy,
-        skip,
-        take: limit,
-      }),
-      prisma.youTubeChannel.count({ where }),
-    ]);
+    let channels, total;
+    try {
+      console.log("📊 [Rankings API] 데이터베이스에서 데이터 조회 시작");
+      [channels, total] = await Promise.all([
+        prisma.youTubeChannel.findMany({
+          where,
+          include: {
+            category: true,
+          },
+          orderBy,
+          skip,
+          take: limit,
+        }),
+        prisma.youTubeChannel.count({ where }),
+      ]);
+      console.log(`✅ [Rankings API] 데이터 조회 완료: ${channels.length}개 채널, 총 ${total}개`);
+    } catch (queryError: any) {
+      console.error("❌ [Rankings API] 데이터 조회 실패:", queryError?.message || queryError);
+      console.error("   오류 상세:", queryError);
+      // 조회 실패 시 빈 결과 반환
+      return NextResponse.json({
+        channels: [],
+        total: 0,
+        page: 1,
+        limit,
+        error: "데이터 조회 중 오류가 발생했습니다.",
+        details: queryError?.message || String(queryError)
+      }, { status: 500 });
+    }
 
     // YouTube 공식 채널 필터링 (애플리케이션 레벨)
     const officialChannelKeywords = [
